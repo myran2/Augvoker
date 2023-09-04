@@ -3,7 +3,7 @@ import type WarcraftLogsReportResponse from "@/types/WarcraftLogsReportResponse"
 
 class WarcraftLogsReportService {
     get(reportId: string): Promise<WarcraftLogsReportResponse> {
-      return http.get(`/report/fights/${reportId}`);
+      return http.get(`/report/?reportId=${reportId}`);
     }
 }
 
