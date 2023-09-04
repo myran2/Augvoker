@@ -1,9 +1,6 @@
 <template>
     <div class="home">
         <WarcraftLogsInput @select-fight="wclFightSelected" />
-
-        <label for="bossOnly">Boss Only</label>
-        <input type="checkbox" v-model="bossOnly" id="bossOnly">
     </div>
 </template>
   
@@ -25,13 +22,16 @@ export default defineComponent({
         return {
             'reportId': '',
             'fight': null,
-            'bossOnly': false,
+            'bossOnly': true,
         };
     },
     methods: {
         wclFightSelected(payload: SelectFightPayload) {
             this.reportId = payload.reportId;
             this.fight = payload.fight;
+            this.bossOnly = payload.bossOnly;
+
+            console.log(payload.reportId, payload.fight.id, payload.bossOnly);
         }
     }
 })

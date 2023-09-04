@@ -1,15 +1,32 @@
 <template>
-    <p v-if="error" style="color: red">{{ error }}</p>
+    <template v-if="error">
+        <Message severity="error">{{ error }}</Message>
+    </template>
 
-    <div class="form-group">
-        <label for="wclLink">WarcraftLogs Link</label>
-        <input v-model="url" type="text" id="wclLink" name="wclLink">
+    <div style="display: flex; flex-flow: column;">
+        <label for="username">Warcraft Logs Report Link</label>
+        <InputText id="wclLink" v-model="url" :class="{'p-invalid': !urlValid}"/>
     </div>
 
-    <select v-model="selectedFightId" :disabled="fights.length == 0">
-        <option disabled default value="">Select a fight...</option>
-        <option v-for="fight in fights" :value="fight.id">#{{ fight.id }} - {{ fight.name }} ({{ !fight.kill ? fight.bossPercentage!/100 + '%' : 'Kill'}})</option>
-    </select>
+    <div class="form-group">
+        <Dropdown v-model="selectedFight" :loading=fightsLoading :options="fights" placeholder="Select a Fight" class="w-full md:w-14rem" >
+            <template #value="slotProps">
+                <div v-if="slotProps.value" class="flex align-items-center">
+                    <div>#{{ slotProps.value.id }} - {{ slotProps.value.name }} ({{ !slotProps.value.kill ? (slotProps.value.fightPercentage / 100) + '%' : 'Kill' }})</div>
+                </div>
+                <span v-else>
+                    {{ slotProps.placeholder }}
+                </span>
+            </template>
+            <template #option="slotProps">
+                <div class="flex align-items-center">
+                    <div>#{{ slotProps.option.id }} - {{ slotProps.option.name }} ({{ !slotProps.option.kill ? (slotProps.option.fightPercentage / 100) + '%' : 'Kill' }})</div>
+                </div>
+            </template>
+        </Dropdown>
+
+        <ToggleButton v-model="bossOnly" on-label="Boss Only" off-label="All Targets"/>
+    </div>
 </template>
 
 <script lang="ts">
@@ -17,10 +34,15 @@ import { defineComponent } from "vue";
 import WarcraftLogsReportService from "@/services/WarcraftLogsReportService";
 import type WarcraftLogsReportResponse from "@/types/WarcraftLogsReportResponse";
 import type WarcraftLogsFight from "@/types/WarcraftLogsFight";
+import Dropdown from 'primevue/dropdown';
+import InputText from 'primevue/inputtext';
+import Message from 'primevue/message';
+import ToggleButton from 'primevue/togglebutton';
 
 export interface SelectFightPayload {
     'reportId': string;
     'fight': WarcraftLogsFight;
+    'bossOnly': boolean;
 }
 
 export default defineComponent({
@@ -30,13 +52,31 @@ export default defineComponent({
         return payload.fight && payload.reportId;
     } 
   },
-  data() {
+  components: {
+    Dropdown,
+    InputText,
+    Message,
+    ToggleButton,
+  },
+  data() : {
+    error: string,
+    url: string,
+    urlValid: boolean,
+    fights: WarcraftLogsFight[],
+    reportId: string,
+    selectedFight: WarcraftLogsFight | null,
+    bossOnly: boolean,
+    fightsLoading: boolean,
+  } {
     return {
         error: "",
         url: "",
-        reportId: "",
+        urlValid: true,
         fights: [] as WarcraftLogsFight[],
-        selectedFightId: "",
+        reportId: "",
+        selectedFight: null,
+        bossOnly: true,
+        fightsLoading: false,
     };
   },
   methods: {
@@ -47,25 +87,27 @@ export default defineComponent({
             return false;
         }
 
-        this.selectedFightId = "";
+        let fightString = null;
 
         if (found.groups.extraParams) {
-            const fight = found.groups.extraParams.match(/fight=(\d+|last)/);
-            if (fight) {
-                this.selectedFightId = fight[1];
+            const fightMatch = found.groups.extraParams.match(/fight=(\d+|last)/);
+            if (fightMatch) {
+                fightString = fightMatch[1];
             }
         }
 
         this.reportId = found.groups.reportId;
+        this.retrieveWclReport(fightString);
 
         return true;
     },
 
-    retrieveWclReport() {
+    retrieveWclReport(fightString: string | null) {
         if (this.reportId == "") {
             return;
         }
 
+        this.fightsLoading = true;
         WarcraftLogsReportService.get(this.reportId)
             .then((response: WarcraftLogsReportResponse) => {
                 this.error = "";
@@ -73,48 +115,66 @@ export default defineComponent({
                 response.data.fights.forEach((fight: WarcraftLogsFight) => {
                     if (fight.boss !== 0) {
                         this.fights.push(fight);
+
+                        if (fightString && fightString !== 'last') {
+                            if (parseInt(fightString) === fight.id) {
+                                this.selectedFight = fight;
+                            }
+                        }
                     }
                 });
 
-                if (this.selectedFightId == 'last' && this.fights.length > 0) {
-                    this.selectedFightId = this.fights.slice(-1)[0].id.toString();
+                if (fightString == 'last' && this.fights.length > 0) {
+                    this.selectedFight = this.fights.slice(-1)[0];
                 }
+
+                this.fightsLoading = false;
             })
             .catch((e: Error) => {
-                this.selectedFightId = "";
+                this.selectedFight = null
                 this.reportId = "";
                 this.fights = [] as WarcraftLogsFight[];
 
+                this.urlValid = false;
+
                 this.error = e.name + ": " + e.message;
+
+                this.fightsLoading = false;
             });
     }
   },
   watch: {
     url(newUrl: string, oldUrl: string) {
-        const processResult = this.processUrl();
-        if (!processResult) {
-            this.selectedFightId = "";
+        this.urlValid = this.processUrl();
+        if (!this.urlValid) {
+            this.selectedFight = null;
             this.reportId = "";
+            this.fights = [] as WarcraftLogsFight[];
+            this.fightsLoading = false;
         }
     },
 
-    reportId(newReportId: string, oldReportId: string) {
-        this.retrieveWclReport();
-    },
-
-    selectedFightId(newFight: string, oldFight: string) {
-        if (Number.isNaN(parseInt(this.selectedFightId))) {
-            return;
-        }
-
-        const fight:WarcraftLogsFight = this.fights.find((f) => f.id === parseInt(this.selectedFightId))!;
-        if (!fight) {
+    selectedFight(newFight: WarcraftLogsFight, oldFight: WarcraftLogsFight) {
+        if (! this.selectedFight) {
             return;
         }
 
         this.$emit("selectFight", {
             'reportId': this.reportId,
-            'fight': fight,
+            'fight': this.selectedFight,
+            'bossOnly': this.bossOnly,
+        });
+    },
+
+    bossOnly(newVal, oldVal) {
+        if (! this.selectedFight) {
+            return;
+        }
+        
+        this.$emit("selectFight", {
+            'reportId': this.reportId,
+            'fight': this.selectedFight,
+            'bossOnly': this.bossOnly,
         });
     }
   }
