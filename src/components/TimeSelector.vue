@@ -4,12 +4,13 @@
         <HumanReadableTimeRange :interval="interval" />
     </div>
 
-    <input type="button" value="Add" @click="addInterval()"/>
+    <Button label="Add" severity="secondary" @click="addInterval()"/>
 </template>
 
 <script lang="ts">
 import { defineComponent } from "vue";
 import HumanReadableTimeRange, { type TimeIntervalSeconds } from '@/components/HumanReadableSeconds.vue';
+import Button from 'primevue/button';
 
 export default defineComponent({
   name: "TimeSelector",
@@ -20,6 +21,7 @@ export default defineComponent({
   },
   components: {
     HumanReadableTimeRange,
+    Button,
   },
   props: {
     durationSeconds: Number,
@@ -28,7 +30,7 @@ export default defineComponent({
     skipTimeIntervals: TimeIntervalSeconds[]
   } {
     return {
-        skipTimeIntervals: [],
+        skipTimeIntervals: [{start: 0, end: 0}],
     };
   },
   methods: {

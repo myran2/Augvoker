@@ -1,5 +1,6 @@
 <template>
     <div class="home">
+        <h1>Augvoker Log Analysis Thing</h1>
         <WarcraftLogsInput @select-fight="wclFightSelected" />
         <template v-if="fight">
             <TimeSelector :durationSeconds="fight.end_time - fight.start_time" @update-skip-interval="updateSkipTimeIntervals"/>
@@ -204,12 +205,19 @@ export default defineComponent({
             this.loading = true;
             let damageDoneRequests = [];
             while (start < (fightEndTime - fightStartTime) / 1000) {
-                damageDoneRequests.push(this.storeTopDamagersForInterval(fightStartTime + (start * 1000), Math.min(fightEndTime, fightStartTime + (end * 1000))));
+                const startTimestamp = fightStartTime + (start * 1000);
+                const endTimestamp = Math.min(fightEndTime, fightStartTime + (end * 1000));
+
+                damageDoneRequests.push(this.storeTopDamagersForInterval(startTimestamp, endTimestamp));
 
                 start = end
                 end += this.timeInterval;
 
                 this.skipTimeIntervals.forEach(interval => {
+                    if (interval.start === interval.end) {
+                        return;
+                    }
+
                     // current interval starts inside of a skipped interval:
                     // change start to end of skipped interval
                     if (interval.start <= start && start <= interval.end) {

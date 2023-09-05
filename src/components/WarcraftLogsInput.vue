@@ -1,34 +1,63 @@
 <template>
-    <h2>Log and Fight Selection</h2>
-    <template v-if="error">
-        <Message severity="error">{{ error }}</Message>
-    </template>
+    <div class="log-fight-selector">
+        <h2>Log and Fight Selection</h2>
+        <template v-if="error">
+            <Message severity="error">{{ error }}</Message>
+        </template>
 
-    <div style="display: flex; flex-flow: column;">
-        <label for="username">Warcraft Logs Report Link</label>
-        <InputText id="wclLink" v-model="url" :class="{'p-invalid': !urlValid}"/>
-    </div>
+        <div class="input">
+            <label for="username">Warcraft Logs Report Link</label>
+            <InputText id="wclLink" v-model="url" :class="{'p-invalid': !urlValid}"/>
+        </div>
 
-    <div class="form-group">
-        <Dropdown v-model="selectedFight" :loading=fightsLoading :options="fights" placeholder="Select a Fight" class="w-full md:w-14rem" >
-            <template #value="slotProps">
-                <div v-if="slotProps.value" class="flex align-items-center">
-                    <div>#{{ slotProps.value.id }} - {{ slotProps.value.name }} ({{ !slotProps.value.kill ? (slotProps.value.fightPercentage / 100) + '%' : 'Kill' }})</div>
-                </div>
-                <span v-else>
-                    {{ slotProps.placeholder }}
-                </span>
-            </template>
-            <template #option="slotProps">
-                <div class="flex align-items-center">
-                    <div>#{{ slotProps.option.id }} - {{ slotProps.option.name }} ({{ !slotProps.option.kill ? (slotProps.option.fightPercentage / 100) + '%' : 'Kill' }})</div>
-                </div>
-            </template>
-        </Dropdown>
+        <div class="sub-elements">
+            <Dropdown v-model="selectedFight" :loading=fightsLoading :options="fights" placeholder="Select a Fight" class="w-full md:w-14rem" >
+                <template #value="slotProps">
+                    <div v-if="slotProps.value" class="flex align-items-center">
+                        <div>#{{ slotProps.value.id }} - {{ slotProps.value.name }} ({{ !slotProps.value.kill ? (slotProps.value.fightPercentage / 100) + '%' : 'Kill' }})</div>
+                    </div>
+                    <span v-else>
+                        {{ slotProps.placeholder }}
+                    </span>
+                </template>
+                <template #option="slotProps">
+                    <div class="flex align-items-center">
+                        <div>#{{ slotProps.option.id }} - {{ slotProps.option.name }} ({{ !slotProps.option.kill ? (slotProps.option.fightPercentage / 100) + '%' : 'Kill' }})</div>
+                    </div>
+                </template>
+            </Dropdown>
 
-        <ToggleButton v-model="bossOnly" on-label="Boss Only" off-label="All Targets"/>
+            <div class="boss-only-toggle">
+                <Checkbox v-model="bossOnly" :binary="true" />
+                <label for="bossOnly">Only Include Damage Done to Bosses</label>
+            </div>
+        </div>
     </div>
 </template>
+
+<style scoped>
+.log-fight-selector {
+    .input {
+        display: flex; flex-flow: column;
+        padding-bottom: 5px;
+    }
+    .sub-elements {
+        display: flex;
+        flex-flow: row nowrap;
+        justify-content: space-between;
+    }
+
+    .boss-only-toggle {
+        display: flex;
+        flex-flow: row nowrap;
+        justify-content: center;
+
+        label {
+            padding-left: 5px;
+        }
+    }
+}
+</style>
 
 <script lang="ts">
 import { defineComponent } from "vue";
@@ -38,7 +67,7 @@ import type WarcraftLogsFight from "@/types/WarcraftLogsFight";
 import Dropdown from 'primevue/dropdown';
 import InputText from 'primevue/inputtext';
 import Message from 'primevue/message';
-import ToggleButton from 'primevue/togglebutton';
+import Checkbox from 'primevue/checkbox';
 
 export interface SelectFightPayload {
     'reportId': string;
@@ -57,7 +86,7 @@ export default defineComponent({
     Dropdown,
     InputText,
     Message,
-    ToggleButton,
+    Checkbox,
   },
   data() : {
     error: string,
