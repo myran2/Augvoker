@@ -10,7 +10,8 @@
 <script lang="ts">
 import { defineComponent } from 'vue'
 import WarcraftLogsInput, { type SelectFightPayload } from '@/components/WarcraftLogsInput.vue';
-import TimeSelector, { type SkipTimeInterval } from '@/components/TimeSelector.vue';
+import TimeSelector from '@/components/TimeSelector.vue';
+import { type TimeIntervalSeconds } from '@/components/HumanReadableSeconds.vue';
 import type WarcraftLogsFight from '@/types/WarcraftLogsFight';
 
 export default defineComponent({
@@ -23,7 +24,7 @@ export default defineComponent({
         reportId: string,
         fight: WarcraftLogsFight | null
         bossOnly: boolean,
-        skipTimeIntervals: SkipTimeInterval[],
+        skipTimeIntervals: TimeIntervalSeconds[],
     } {
         return {
             'reportId': '',
@@ -39,7 +40,7 @@ export default defineComponent({
             this.bossOnly = payload.bossOnly;
         },
 
-        updateSkipTimeIntervals(payload: SkipTimeInterval[]) {
+        updateSkipTimeIntervals(payload: TimeIntervalSeconds[]) {
             this.skipTimeIntervals = payload;
         }
     }

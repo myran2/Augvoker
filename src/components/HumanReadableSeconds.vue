@@ -1,41 +1,42 @@
 <template>
-    <InputMask v-model="display" mask="9:99"/>
+    <InputMask v-model="startDisplay" mask="9:99"/>
+    -
+    <InputMask v-model="endDisplay" mask="9:99"/>
 </template>
 
 <script lang="ts">
-import { defineComponent } from "vue";
+import { type PropType, defineComponent } from "vue";
 import InputMask from 'primevue/inputmask';
 
-export interface UpdateTimePayload {
-  seconds: number;
-  index: number;
-  type: string;
+export interface TimeIntervalSeconds {
+    'start': number;
+    'end': number;
 }
 
 export default defineComponent({
-  name: "HumanReadableSeconds",
-  emits: {
-    updateSeconds(payload: UpdateTimePayload) {
-      return true;
-    }
-  },
+  name: "HumanReadableTimeRange",
   components: {
     InputMask,
   },
   props: {
-    index: Number,
-    type: String,
+    interval: Object as PropType<TimeIntervalSeconds>
   },
   data() : {
-    display: string
+    startDisplay: string;
+    endDisplay: string;
   } {
     return {
-        display: "0:00"
+        startDisplay: "0:00",
+        endDisplay: "0:00",
     };
   },
 
   methods: {
     timeToSeconds(time: string): number | null {
+      if (time.includes('_')) {
+        return null;
+      }
+      
       const parts = time.split(':');
       const min = parseInt(parts[0]);
       const sec = parseInt(parts[1]);
@@ -44,21 +45,30 @@ export default defineComponent({
     }
   },
   watch: {
-    display: function(newDisplay: string, oldDisplay: string) {
-      if (!['start', 'end'].includes(this.type ?? '')) {
+    startDisplay: function(newDisplay: string, oldDisplay: string) {
+      if (!this.interval) {
         return;
       }
 
-      const sec = this.timeToSeconds(this.display);
+      const sec = this.timeToSeconds(this.startDisplay);
       if (!sec) {
         return;
       }
 
-      this.$emit("updateSeconds", {
-        'seconds': sec,
-        'index': this.index!,
-        'type': this.type!
-      });
+      this.interval.start = sec;
+    },
+
+    endDisplay: function(newDisplay: string, oldDisplay: string) {
+      if (!this.interval) {
+        return;
+      }
+      
+      const sec = this.timeToSeconds(this.endDisplay);
+      if (!sec) {
+        return;
+      }
+
+      this.interval.end = sec;
     }
   },
 });

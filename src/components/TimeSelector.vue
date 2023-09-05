@@ -1,12 +1,7 @@
 <template>
     <h2>Skip Time Intervals</h2>
-    <div v-for="(interval, index) in skipTimeIntervals">
-        {{ index }} - 
-        <HumanReadableSeconds :index="index" :type="'start'" @update-seconds="updateInterval"/>
-        -
-        <HumanReadableSeconds :index="index" :type="'end'" @update-seconds="updateInterval"/>
-
-        <input type="button" value="Delete" @click="deleteInterval(index)"/>
+    <div v-for="interval in skipTimeIntervals">
+        <HumanReadableTimeRange :interval="interval" />
     </div>
 
     <input type="button" value="Add" @click="addInterval()"/>
@@ -14,46 +9,29 @@
 
 <script lang="ts">
 import { defineComponent } from "vue";
-import HumanReadableSeconds, { type UpdateTimePayload } from '@/components/HumanReadableSeconds.vue';
-
-export interface SkipTimeInterval {
-    'start': Number;
-    'end': Number;
-}
+import HumanReadableTimeRange, { type TimeIntervalSeconds } from '@/components/HumanReadableSeconds.vue';
 
 export default defineComponent({
   name: "TimeSelector",
   emits: {
-    updateSkipInterval(payload: SkipTimeInterval[]) {
+    updateSkipInterval(payload: TimeIntervalSeconds[]) {
         return payload;
     }
   },
   components: {
-    HumanReadableSeconds,
+    HumanReadableTimeRange,
   },
   props: {
     durationSeconds: Number,
   },
   data() : {
-    skipTimeIntervals: SkipTimeInterval[]
+    skipTimeIntervals: TimeIntervalSeconds[]
   } {
     return {
-        skipTimeIntervals: [
-            {start: 0, end: 0},
-        ]
+        skipTimeIntervals: [],
     };
   },
   methods: {
-    updateInterval(payload: UpdateTimePayload) {
-        if (payload.type === 'start') {
-            this.skipTimeIntervals[payload.index].start = payload.seconds;
-        } else if (payload.type === 'end') {
-            this.skipTimeIntervals[payload.index].end = payload.seconds;
-        }
-
-        this.$emit("updateSkipInterval", this.skipTimeIntervals);
-    },
-
     deleteInterval(index: number) {
         this.skipTimeIntervals.splice(index, 1);
     },
@@ -65,9 +43,13 @@ export default defineComponent({
         });
     }
   },
+
   watch: {
-    skipTimeIntervals: function(newV, oldV) {
-        console.log(this.skipTimeIntervals);
+    skipTimeIntervals: {
+      handler(val, oldVal) {
+        this.$emit("updateSkipInterval", this.skipTimeIntervals);
+      },
+      deep: true
     }
   }
 });
