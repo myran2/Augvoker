@@ -1,4 +1,5 @@
 <template>
+    <h2>Log and Fight Selection</h2>
     <template v-if="error">
         <Message severity="error">{{ error }}</Message>
     </template>
@@ -170,7 +171,7 @@ export default defineComponent({
         if (! this.selectedFight) {
             return;
         }
-        
+
         this.$emit("selectFight", {
             'reportId': this.reportId,
             'fight': this.selectedFight,
