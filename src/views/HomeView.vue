@@ -92,6 +92,7 @@ export default defineComponent({
         skipTimeIntervals: TimeIntervalSeconds[],
         topDamagersByTime: DamagerInterval[],
         tableValues: Array<Object>,
+        ignoreSpellIds: Array<Number>,
         loading: boolean,
         mrtNote: string
     } {
@@ -104,7 +105,12 @@ export default defineComponent({
             topDamagersByTime: [],
             tableValues: [],
             loading: false,
-            mrtNote: ""
+            mrtNote: "",
+            ignoreSpellIds: [
+                402583, // Beacon to the Beyond (An'shuul, the Cosmic Wanderer)
+                408671, // Dragonfire Bomb Dispenser
+                378423, // Slimy Expulsion Boots (Coated in Slime)
+            ],
         };
     },
     methods: {
@@ -118,12 +124,14 @@ export default defineComponent({
             this.topDamagersByTime = [];
 
             if (this.fight && this.fight.name == "Scalecommander Sarkareth") {
+                // Prefill skip intervals for P1->P2 and P2->P3 intermissions by default.
                 this.skipTimeIntervals = [{ start: 105, end:135 }, { start: 235, end: 255 }];
             }
         },
 
         async storeTopDamagersForInterval(start: number, end: number): Promise<any> {
-            return WarcraftLogsDamageDoneService.get(this.reportId, start, end, this.bossOnly)
+            let trinketFilter = `ability.id NOT IN (${this.ignoreSpellIds.join(', ')})`;
+            return WarcraftLogsDamageDoneService.get(this.reportId, start, end, this.bossOnly, trinketFilter)
             .then((response: WarcraftLogsDamageDoneResponse) => {
                 const sortedPlayers = response.data.entries.sort((a:any, b:any) => {
                     if (a.icon == 'Evoker-Augmentation') {

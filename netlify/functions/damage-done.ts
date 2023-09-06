@@ -51,10 +51,14 @@ const handler: Handler = async (event: HandlerEvent, context) => {
     const segmentStart = getParameter(event, "start");
     const segmentEnd = getParameter(event, "end");
     const targetclass = getParameter(event, "targetclass", false);
+    const filter = getParameter(event, "filter", false);
 
     let url = `https://www.warcraftlogs.com:443/v1/report/tables/damage-done/${reportId}?start=${segmentStart}&end=${segmentEnd}`;
     if (targetclass) {
         url += `&targetclass=${targetclass}`;
+    }
+    if (filter) {
+      url += `&filter=${filter}`;
     }
 
     const response = await axios.get(
