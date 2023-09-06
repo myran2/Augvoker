@@ -13,12 +13,20 @@
             </div>
         </template>
 
-        <template v-if="mrtNote">
-            <div class="mrt-note">
-                <h2>MRT Note</h2>
-                <Textarea v-model="mrtNote" cols="100" autoResize />
-            </div>
-        </template>
+        <div class="mrt-note" v-if="mrtNote">
+            <h2>MRT Note</h2>
+            <Textarea v-model="mrtNote" cols="100" autoResize />
+        </div>
+
+        <div v-if="tableValues.length > 0" class="damage-done-table">
+            <DataTable stripedRows :value="tableValues">
+                <Column field="timeRange" header="Time"></Column>
+                <Column field="player1" header="Player - Damage"></Column>
+                <Column field="player2" header="Player - Damage"></Column>
+                <Column field="player3" header="Player - Damage"></Column>
+                <Column field="player4" header="Player - Damage"></Column>
+            </DataTable>
+        </div>
     </div>
 </template>
 
@@ -34,6 +42,10 @@
             width: 100%;
         }
     }
+
+    .damage-done-table {
+        padding-top: 3%;
+    }
 }
 </style>
   
@@ -47,6 +59,8 @@ import { type TimeIntervalSeconds } from '@/components/HumanReadableSeconds.vue'
 import type WarcraftLogsFight from '@/types/WarcraftLogsFight';
 import Button from 'primevue/button';
 import Textarea from 'primevue/textarea';
+import DataTable from 'primevue/datatable';
+import Column from 'primevue/column';
 
 interface WclDamager {
     name: string;
@@ -67,6 +81,8 @@ export default defineComponent({
         TimeSelector,
         Button,
         Textarea,
+        DataTable,
+        Column,
     },
     data() : {
         reportId: string,
@@ -75,6 +91,7 @@ export default defineComponent({
         timeInterval: number,
         skipTimeIntervals: TimeIntervalSeconds[],
         topDamagersByTime: DamagerInterval[],
+        tableValues: Array<Object>,
         loading: boolean,
         mrtNote: string
     } {
@@ -85,6 +102,7 @@ export default defineComponent({
             timeInterval: 30,
             skipTimeIntervals: [{start: 0, end: 0}],
             topDamagersByTime: [],
+            tableValues: [],
             loading: false,
             mrtNote: ""
         };
@@ -95,6 +113,9 @@ export default defineComponent({
             this.fight = payload.fight;
             this.bossOnly = payload.bossOnly;
             this.skipTimeIntervals = [];
+            this.mrtNote = "";
+            this.tableValues = [];
+            this.topDamagersByTime = [];
 
             if (this.fight && this.fight.name == "Scalecommander Sarkareth") {
                 this.skipTimeIntervals = [{ start: 105, end:135 }, { start: 235, end: 255 }];
@@ -212,6 +233,19 @@ export default defineComponent({
             this.mrtNote = mrtLines.join('\n');
         },
 
+        formatDamagersForPresentation() {
+            this.tableValues = [];
+            this.topDamagersByTime.forEach((row: DamagerInterval) => {
+                this.tableValues.push({
+                    timeRange: `${this.secondsToTime(row.start)} - ${this.secondsToTime(row.end)}`,
+                    player1: `${row.damagers[0].name} - ${row.damagers[0].damage.toLocaleString(undefined)}`,
+                    player2: `${row.damagers[1].name} - ${row.damagers[1].damage.toLocaleString(undefined)}`,
+                    player3: `${row.damagers[2].name} - ${row.damagers[2].damage.toLocaleString(undefined)}`,
+                    player4: `${row.damagers[3].name} - ${row.damagers[3].damage.toLocaleString(undefined)}`,
+                });
+            });
+        },
+
         fillDamageDoneTable() {
             if (!this.fight) {
                 return;
@@ -256,11 +290,15 @@ export default defineComponent({
             }
 
             Promise.all(damageDoneRequests).then(results => {
-                this.loading = false;
                 this.topDamagersByTime.sort((a, b) => {
                     return a.start - b.start;
                 });
+
                 this.makeMrtNote();
+
+                this.formatDamagersForPresentation();
+
+                this.loading = false;
             });
         }
     }
