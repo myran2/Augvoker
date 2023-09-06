@@ -1,14 +1,27 @@
 <template>
+  <div class="skip-time-intervals">
     <h2>Skip Time Intervals</h2>
     <div v-for="interval in skipTimeIntervals">
         <HumanReadableTimeRange :interval="interval" />
     </div>
 
-    <Button label="Add" severity="secondary" @click="addInterval()"/>
+    <Button id="add-interval" label="Add" severity="secondary" outlined @click="addInterval()"/>
+  </div>
 </template>
 
+<style scoped>
+.skip-time-intervals {
+  padding-bottom: 3%;
+
+  #add-interval {
+    margin-top: 1%;
+    margin-left: 3px;
+  }
+}
+</style>
+
 <script lang="ts">
-import { defineComponent } from "vue";
+import { type PropType, defineComponent } from "vue";
 import HumanReadableTimeRange, { type TimeIntervalSeconds } from '@/components/HumanReadableSeconds.vue';
 import Button from 'primevue/button';
 
@@ -25,33 +38,22 @@ export default defineComponent({
   },
   props: {
     durationSeconds: Number,
+    skipTimeIntervals: Array as PropType<Array<TimeIntervalSeconds>>,
   },
   data() : {
-    skipTimeIntervals: TimeIntervalSeconds[]
   } {
     return {
-        skipTimeIntervals: [{start: 0, end: 0}],
     };
   },
   methods: {
-    deleteInterval(index: number) {
-        this.skipTimeIntervals.splice(index, 1);
-    },
-
     addInterval() {
+      if (!this.skipTimeIntervals) {
+        return;
+      }
         this.skipTimeIntervals.push({
             start: 0,
             end: 0,
         });
-    }
-  },
-
-  watch: {
-    skipTimeIntervals: {
-      handler(val, oldVal) {
-        this.$emit("updateSkipInterval", this.skipTimeIntervals);
-      },
-      deep: true
     }
   }
 });

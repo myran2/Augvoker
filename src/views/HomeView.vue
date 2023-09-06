@@ -3,18 +3,39 @@
         <h1>Augvoker Log Analysis Thing</h1>
         <WarcraftLogsInput @select-fight="wclFightSelected" />
         <template v-if="fight">
-            <TimeSelector :durationSeconds="fight.end_time - fight.start_time" @update-skip-interval="updateSkipTimeIntervals"/>
+            <TimeSelector 
+                :durationSeconds="fight.end_time - fight.start_time" 
+                :skipTimeIntervals="skipTimeIntervals"
+            />
 
             <div>
-                <Button label="Calculate" :loading="loading" @click="fillDamageDoneTable()"/>
+                <Button id="calculate" label="Calculate" severity="success" :loading="loading" @click="fillDamageDoneTable()"/>
             </div>
         </template>
 
         <template v-if="mrtNote">
+            <div class="mrt-note">
+                <h2>MRT Note</h2>
                 <Textarea v-model="mrtNote" cols="100" autoResize />
+            </div>
         </template>
     </div>
 </template>
+
+<style scoped>
+.home {
+    #calculate {
+        width: 100%;
+    }
+
+    .mrt-note {
+        padding-top: 3%;
+        textarea {
+            width: 100%;
+        }
+    }
+}
+</style>
   
 <script lang="ts">
 import { defineComponent } from 'vue'
@@ -62,7 +83,7 @@ export default defineComponent({
             'fight': null,
             'bossOnly': true,
             timeInterval: 30,
-            skipTimeIntervals: [],
+            skipTimeIntervals: [{start: 0, end: 0}],
             topDamagersByTime: [],
             loading: false,
             mrtNote: ""
@@ -73,10 +94,11 @@ export default defineComponent({
             this.reportId = payload.reportId;
             this.fight = payload.fight;
             this.bossOnly = payload.bossOnly;
-        },
+            this.skipTimeIntervals = [];
 
-        updateSkipTimeIntervals(payload: TimeIntervalSeconds[]) {
-            this.skipTimeIntervals = payload;
+            if (this.fight && this.fight.name == "Scalecommander Sarkareth") {
+                this.skipTimeIntervals = [{ start: 105, end:135 }, { start: 235, end: 255 }];
+            }
         },
 
         async storeTopDamagersForInterval(start: number, end: number): Promise<any> {

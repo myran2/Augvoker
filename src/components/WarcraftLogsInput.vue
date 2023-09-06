@@ -37,6 +37,8 @@
 
 <style scoped>
 .log-fight-selector {
+    padding-bottom: 3%;
+
     .input {
         display: flex; flex-flow: column;
         padding-bottom: 5px;

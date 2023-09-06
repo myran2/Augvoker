@@ -26,12 +26,18 @@ export default defineComponent({
     endDisplay: string;
   } {
     return {
-        startDisplay: "0:00",
-        endDisplay: "0:00",
+        startDisplay: this.interval ? this.secondsToTime(this.interval.start) : "0:00",
+        endDisplay: this.interval ? this.secondsToTime(this.interval.end) : "0:00",
     };
   },
 
   methods: {
+    secondsToTime(seconds: number): string {
+        const min = Math.floor(seconds / 60);
+        const sec = seconds % 60;
+        return `${min.toString().padStart(1, '0')}:${sec.toString().padStart(2, '0')}`;
+    },
+
     timeToSeconds(time: string): number | null {
       if (time.includes('_')) {
         return null;
