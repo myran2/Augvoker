@@ -232,6 +232,10 @@ export default defineComponent({
                     timeStr = "PREPULL";
                 }
 
+                if (interval.damagers.length < 2) {
+                    return;
+                }
+
                 let firstName = this.colorize(interval.damagers[1].name, interval.damagers[1].class);
                 let secondName = this.colorize(interval.damagers[0].name, interval.damagers[0].class);
                 mrtLines.push(`${timeStr} - ${firstName} ${secondName}`);
@@ -244,6 +248,10 @@ export default defineComponent({
         formatDamagersForPresentation() {
             this.tableValues = [];
             this.topDamagersByTime.forEach((row: DamagerInterval) => {
+                if (row.damagers.length < 4) {
+                    return;
+                }
+
                 this.tableValues.push({
                     timeRange: `${this.secondsToTime(row.start)} - ${this.secondsToTime(row.end)}`,
                     player1: `${row.damagers[0].name} - ${row.damagers[0].damage.toLocaleString(undefined)}`,
