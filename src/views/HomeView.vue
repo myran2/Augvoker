@@ -15,6 +15,7 @@
 
         <div class="mrt-note" v-if="mrtNote">
             <h2>MRT Note</h2>
+            <span>Intended for <a target="_blank" href="https://wago.io/yrmx6ZQSG">this WeakAura</a>.</span>
             <Textarea v-model="mrtNote" cols="100" autoResize />
         </div>
 
