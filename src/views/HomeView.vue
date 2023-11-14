@@ -1,6 +1,10 @@
 <template>
     <div class="home">
         <h1>Augvoker Log Analysis Thing</h1>
+        <Message severity="warn">
+            Damage attribution is broken in 10.2 again. This tool will give (wildly) misleading results until Blizzard fixes it.<br>
+            Check the <span style="font-family: monospace; font-weight: bold;">#augmentation</span> channel of the <a target="_blank" href="https://discord.gg/evoker">Evoker discord</a> for updates.
+        </Message>
         <WarcraftLogsInput @select-fight="wclFightSelected" />
         <template v-if="fight">
             <TimeSelector 
@@ -62,6 +66,7 @@ import Button from 'primevue/button';
 import Textarea from 'primevue/textarea';
 import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
+import Message from 'primevue/message';
 
 interface WclDamager {
     name: string;
@@ -84,6 +89,7 @@ export default defineComponent({
         Textarea,
         DataTable,
         Column,
+        Message,
     },
     data() : {
         reportId: string,
