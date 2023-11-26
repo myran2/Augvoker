@@ -146,7 +146,7 @@ export default defineComponent({
                 281721, // Bile-Stained Crawg Tusks (Vile Bile)
                 214397, // Mark of Dargrul (Landslide)
             ],
-            damagersPerRow: 3,
+            damagersPerRow: 2,
         };
     },
     methods: {
