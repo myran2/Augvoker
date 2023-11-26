@@ -101,7 +101,8 @@ export default defineComponent({
         tableValues: Array<Object>,
         ignoreSpellIds: Array<Number>,
         loading: boolean,
-        mrtNote: string
+        mrtNote: string,
+        damagersPerRow: number,
     } {
         return {
             'reportId': '',
@@ -145,6 +146,7 @@ export default defineComponent({
                 281721, // Bile-Stained Crawg Tusks (Vile Bile)
                 214397, // Mark of Dargrul (Landslide)
             ],
+            damagersPerRow: 3,
         };
     },
     methods: {
@@ -254,7 +256,7 @@ export default defineComponent({
             return `|cff${colorString.toLowerCase()}${playerName}|r`;
         },
 
-        makeMrtNote() {
+        makeMrtNote(damagersPerRow: number) {
             if (!this.topDamagersByTime) {
                 return;
             }
@@ -263,16 +265,19 @@ export default defineComponent({
             this.topDamagersByTime.forEach(interval => {
                 let timeStr = this.secondsToTime(interval.start);
                 if (timeStr === "00:00") {
-                    timeStr = "PREPULL";
+                    timeStr = "PULL";
                 }
 
-                if (interval.damagers.length < 2) {
+                if (interval.damagers.length < damagersPerRow) {
                     return;
                 }
 
-                let firstName = this.colorize(interval.damagers[1].name, interval.damagers[1].class);
-                let secondName = this.colorize(interval.damagers[0].name, interval.damagers[0].class);
-                mrtLines.push(`${timeStr} - ${firstName} ${secondName}`);
+                let mrtLine: Array<string> = [];
+                interval.damagers.slice(0, damagersPerRow).forEach(damager => {
+                    mrtLine.push(this.colorize(damager.name, damager.class));
+                });
+
+                mrtLines.push(`${timeStr} - ${mrtLine.join(' ')}`);
             })
 
             mrtLines.push('prescGlowsEnd');
@@ -344,7 +349,7 @@ export default defineComponent({
                     return a.start - b.start;
                 });
 
-                this.makeMrtNote();
+                this.makeMrtNote(this.damagersPerRow);
 
                 this.formatDamagersForPresentation();
 
