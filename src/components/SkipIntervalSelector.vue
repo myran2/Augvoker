@@ -54,7 +54,7 @@ import InputGroup from 'primevue/inputgroup';
 import InputGroupAddon from 'primevue/inputgroupaddon';
 
 export default defineComponent({
-  name: "TimeSelector",
+  name: "SkipIntervalSelector",
   emits: {
     updateTimeInterval(payload: number) {
         return payload;

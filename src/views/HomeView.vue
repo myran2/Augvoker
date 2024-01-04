@@ -7,16 +7,15 @@
         </Message>
         <WarcraftLogsInput @select-fight="wclFightSelected" />
         <template v-if="fight">
-            <div class="advanced-ebon-might-timings-toggle" v-if="false">
+            <div class="advanced-ebon-might-timings-toggle">
                 <InputSwitch v-model="advancedEbonMightTimings" />
                 <label>Advanced Ebon Might Timings</label>
             </div>
-            
-            <div v-if="advancedEbonMightTimings">
-                timeInterval
-            </div>
 
-            <TimeSelector v-else
+            <EbonMightTimeSelector v-if="advancedEbonMightTimings"
+            />
+
+            <SkipIntervalSelector v-else
                 :durationSeconds="fight.end_time - fight.start_time" 
                 :skipTimeIntervals="skipTimeIntervals"
                 :timeInterval="timeInterval"
@@ -78,7 +77,7 @@ import { defineComponent } from 'vue'
 import WarcraftLogsInput, { type SelectFightPayload } from '@/components/WarcraftLogsInput.vue';
 import WarcraftLogsDamageDoneService from '@/services/WarcraftLogsDamageDoneService';
 import type WarcraftLogsDamageDoneResponse from '@/types/WarcraftLogsDamageDoneResponse';
-import TimeSelector from '@/components/TimeSelector.vue';
+import SkipIntervalSelector from '@/components/SkipIntervalSelector.vue';
 import { type TimeIntervalSeconds } from '@/components/HumanReadableSeconds.vue';
 import type WarcraftLogsFight from '@/types/WarcraftLogsFight';
 import Button from 'primevue/button';
@@ -106,7 +105,7 @@ export default defineComponent({
     name: 'HomeView',
     components: {
         WarcraftLogsInput,
-        TimeSelector,
+        SkipIntervalSelector,
         Button,
         Textarea,
         DataTable,
@@ -134,7 +133,7 @@ export default defineComponent({
             'bossOnly': true,
             'advancedEbonMightTimings': false,
             timeInterval: 30,
-            skipTimeIntervals: [{start: 0, end: 0}],
+            skipTimeIntervals: [],
             topDamagersByTime: [],
             tableValues: [],
             loading: false,
