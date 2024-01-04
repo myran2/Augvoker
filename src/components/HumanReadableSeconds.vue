@@ -1,8 +1,15 @@
 <template>
     <InputMask v-model="startDisplay" mask="9:99"/>
-    -
+    <span>-</span>
     <InputMask v-model="endDisplay" mask="9:99"/>
 </template>
+
+<style scoped>
+span {
+  padding: 2px 8px 0px;
+  font-size: 25px;
+}
+</style>
 
 <script lang="ts">
 import { type PropType, defineComponent } from "vue";

@@ -7,9 +7,20 @@
         </Message>
         <WarcraftLogsInput @select-fight="wclFightSelected" />
         <template v-if="fight">
-            <TimeSelector 
+            <div class="advanced-ebon-might-timings-toggle" v-if="false">
+                <InputSwitch v-model="advancedEbonMightTimings" />
+                <label>Advanced Ebon Might Timings</label>
+            </div>
+            
+            <div v-if="advancedEbonMightTimings">
+                timeInterval
+            </div>
+
+            <TimeSelector v-else
                 :durationSeconds="fight.end_time - fight.start_time" 
                 :skipTimeIntervals="skipTimeIntervals"
+                :timeInterval="timeInterval"
+                @updateTimeInterval="onTimeIntervalUpdate"
             />
 
             <div>
@@ -41,6 +52,14 @@
         width: 100%;
     }
 
+    .advanced-ebon-might-timings-toggle {
+        display: flex;
+        flex-flow: row nowrap;
+        align-items: center;
+        column-gap: 15px;
+        padding-bottom: 15px;
+    }
+
     .mrt-note {
         padding-top: 3%;
         textarea {
@@ -67,6 +86,7 @@ import Textarea from 'primevue/textarea';
 import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
 import Message from 'primevue/message';
+import InputSwitch from 'primevue/inputswitch';
 import { BlacklistedAbilities } from '@/constants/BlacklistedAbilities';
 import { SkipTimeIntervals } from '@/constants/SkipTimeIntervals';
 
@@ -92,11 +112,13 @@ export default defineComponent({
         DataTable,
         Column,
         Message,
+        InputSwitch,
     },
     data() : {
         reportId: string,
         fight: WarcraftLogsFight | null
         bossOnly: boolean,
+        advancedEbonMightTimings: boolean,
         timeInterval: number,
         skipTimeIntervals: TimeIntervalSeconds[],
         topDamagersByTime: DamagerInterval[],
@@ -110,6 +132,7 @@ export default defineComponent({
             'reportId': '',
             'fight': null,
             'bossOnly': true,
+            'advancedEbonMightTimings': false,
             timeInterval: 30,
             skipTimeIntervals: [{start: 0, end: 0}],
             topDamagersByTime: [],
@@ -281,7 +304,6 @@ export default defineComponent({
             const fightStartTime = this.fight.start_time;
             const fightEndTime = this.fight.end_time;
 
-
             this.topDamagersByTime = [];
             let start = 0;
             let end = this.timeInterval;
@@ -327,6 +349,10 @@ export default defineComponent({
 
                 this.loading = false;
             });
+        },
+
+        onTimeIntervalUpdate(payload: number) {
+            this.timeInterval = payload;
         }
     }
 })

@@ -1,11 +1,27 @@
 <template>
   <div class="skip-time-intervals">
-    <h2>Skip Time Intervals</h2>
-    <div v-for="interval in skipTimeIntervals">
-        <HumanReadableTimeRange :interval="interval" />
+    <div class="columns">
+      <div style="min-width: 578px">
+        <h2>Skip Time Intervals</h2>
+        <InputGroup v-for="(interval, index) in skipTimeIntervals" class="interval">
+          <Button @click="removeInterval(index)" icon="pi pi-trash" severity="danger"/>
+          <HumanReadableTimeRange :interval="interval" />
+        </InputGroup>
+        <Button id="add-interval" label="Add" severity="secondary" outlined @click="addInterval()"/>
+      </div>
+      <div>
+        <h2>Ebon Might Duration</h2>
+        <InputGroup>
+          <InputNumber
+            v-model="ebonMightDuration"
+            :step="1"
+            :min="15"
+            :max="45"
+          ></InputNumber>
+          <InputGroupAddon>Seconds</InputGroupAddon>
+        </InputGroup>
+      </div>
     </div>
-
-    <Button id="add-interval" label="Add" severity="secondary" outlined @click="addInterval()"/>
   </div>
 </template>
 
@@ -13,9 +29,18 @@
 .skip-time-intervals {
   padding-bottom: 3%;
 
+  .interval {
+    padding-bottom: 5px;
+  }
+
   #add-interval {
-    margin-top: 1%;
-    margin-left: 3px;
+    margin-top: 2%;
+  }
+
+  .columns {
+    display: flex;
+    flex-flow: row nowrap;
+    column-gap: 50px;
   }
 }
 </style>
@@ -24,25 +49,34 @@
 import { type PropType, defineComponent } from "vue";
 import HumanReadableTimeRange, { type TimeIntervalSeconds } from '@/components/HumanReadableSeconds.vue';
 import Button from 'primevue/button';
+import InputNumber from 'primevue/inputnumber';
+import InputGroup from 'primevue/inputgroup';
+import InputGroupAddon from 'primevue/inputgroupaddon';
 
 export default defineComponent({
   name: "TimeSelector",
   emits: {
-    updateSkipInterval(payload: TimeIntervalSeconds[]) {
+    updateTimeInterval(payload: number) {
         return payload;
-    }
+    },
   },
   components: {
     HumanReadableTimeRange,
     Button,
+    InputNumber,
+    InputGroup,
+    InputGroupAddon
   },
   props: {
     durationSeconds: Number,
     skipTimeIntervals: Array as PropType<Array<TimeIntervalSeconds>>,
+    timeInterval: Number,
   },
   data() : {
+    ebonMightDuration: number,
   } {
     return {
+      ebonMightDuration: this.timeInterval ?? 30
     };
   },
   methods: {
@@ -54,6 +88,15 @@ export default defineComponent({
             start: 0,
             end: 0,
         });
+    },
+
+    removeInterval(index: number) {
+      this.skipTimeIntervals?.splice(index, 1);
+    }
+  },
+  watch: {
+    ebonMightDuration(newDuration: number, oldDuration: number) {
+      this.$emit("updateTimeInterval", newDuration);
     }
   }
 });
