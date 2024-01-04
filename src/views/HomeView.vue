@@ -7,15 +7,7 @@
         </Message>
         <WarcraftLogsInput @select-fight="wclFightSelected" />
         <template v-if="fight">
-            <div class="advanced-ebon-might-timings-toggle">
-                <InputSwitch v-model="advancedEbonMightTimings" />
-                <label>Advanced Ebon Might Timings</label>
-            </div>
-
-            <EbonMightTimeSelector v-if="advancedEbonMightTimings"
-            />
-
-            <SkipIntervalSelector v-else
+            <SkipIntervalSelector
                 :durationSeconds="fight.end_time - fight.start_time" 
                 :skipTimeIntervals="skipTimeIntervals"
                 :timeInterval="timeInterval"
