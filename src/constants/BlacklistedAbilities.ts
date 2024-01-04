@@ -1,4 +1,4 @@
-export const blacklistedAbilities: number[] = [
+export const BlacklistedAbilities: number[] = [
     409632, // Breath of Eons
     402583, // Beacon
     408682, // Dragonfire Bomb Dispenser

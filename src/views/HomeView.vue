@@ -67,7 +67,8 @@ import Textarea from 'primevue/textarea';
 import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
 import Message from 'primevue/message';
-import { blacklistedAbilities } from '@/constants/BlacklistedAbilities';
+import { BlacklistedAbilities } from '@/constants/BlacklistedAbilities';
+import { SkipTimeIntervals } from '@/constants/SkipTimeIntervals';
 
 interface WclDamager {
     name: string;
@@ -115,7 +116,7 @@ export default defineComponent({
             tableValues: [],
             loading: false,
             mrtNote: "",
-            ignoreSpellIds: blacklistedAbilities,
+            ignoreSpellIds: BlacklistedAbilities,
             damagersPerRow: 3,
         };
     },
@@ -130,19 +131,8 @@ export default defineComponent({
             this.topDamagersByTime = [];
 
             // prefill some mythic fight skip intervals
-            if (this.fight && this.fight.difficulty == 5) {
-                switch(this.fight.boss) {
-                    // Scalecommander Sarkareth
-                    case 2685:
-                        // P1->P2 and P2->P3 intermissions.
-                        this.skipTimeIntervals = [
-                            // P1 -> P2 intermission
-                            { start: 105, end:135 },
-                            // P2 -> P3 intermission
-                            { start: 235, end: 255 }
-                        ];
-                        break;
-                }
+            if (this.fight) {
+                this.skipTimeIntervals = SkipTimeIntervals[this.fight.boss] ?? [];
             }
         },
 
