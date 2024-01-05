@@ -2,12 +2,12 @@
     <div class="home">
         <h1>Augvoker Log Analysis Thing</h1>
         <Message severity="info">
-            Damage attribution in 10.2 is mostly fixed now. There are still a few inaccuracies, but it should be mostly fine.<br>
+            Damage attribution in 10.2 is still pretty wacky. It's mostly fine, but expect some inaccuracies.<br>
             You can check <a target="_blank" href="https://gist.github.com/ljosberinn/a2f08a53cfe8632a18350eea44e9da3e">this doc</a> or the <span style="font-family: monospace; font-weight: bold;">#augmentation</span> channel of the <a target="_blank" href="https://discord.gg/evoker">Evoker discord</a> for updates.
         </Message>
         <WarcraftLogsInput @select-fight="wclFightSelected" />
         <template v-if="fight">
-            <div class="advanced-ebon-might-timings-toggle">
+            <div class="advanced-ebon-might-timings-toggle" v-if="false">
                 <InputSwitch v-model="advancedEbonMightTimings" />
                 <label>Advanced Ebon Might Timings</label>
             </div>
@@ -128,7 +128,8 @@ export default defineComponent({
         ignoreSpellIds: Array<Number>,
         loading: boolean,
         mrtNote: string,
-        damagersPerRow: number,
+        damagersPerEbonMight: number,
+        prescienceCooldownSeconds: number,
     } {
         return {
             'reportId': '',
@@ -137,13 +138,28 @@ export default defineComponent({
             'advancedEbonMightTimings': false,
             timeInterval: 30,
             skipTimeIntervals: [],
-            ebonMightCasts: [],
+            ebonMightCasts: [
+                [ 4, 29 ],
+                [ 35, 60 ],
+                [ 70, 106 ],
+                [ 101, 126 ],
+                [ 133, 166 ],
+                [ 166, 198 ],
+                [ 199, 222 ],
+                [ 233, 255 ],
+                [ 265, 292 ],
+                [ 299, 318 ],
+                [ 332, 373 ],
+                [ 366, 408 ],
+                [ 400, 430 ],
+            ],
             topDamagersByTime: [],
             tableValues: [],
             loading: false,
             mrtNote: "",
             ignoreSpellIds: BlacklistedAbilities,
-            damagersPerRow: 3,
+            damagersPerEbonMight: 3,
+            prescienceCooldownSeconds: 11,
         };
     },
     methods: {
@@ -254,31 +270,45 @@ export default defineComponent({
             return `|cff${colorString.toLowerCase()}${playerName}|r`;
         },
 
-        makeMrtNote(damagersPerRow: number) {
+        makeMrtNote(damagersPerEbonMight: number) {
             if (!this.topDamagersByTime) {
                 return;
             }
 
             let mrtLines: string[] = ['prescGlowsStart'];
-            this.topDamagersByTime.forEach(interval => {
-                let timeStr = this.secondsToTime(interval.start);
-                if (timeStr === "00:00") {
-                    timeStr = "PULL";
-                }
+            let ebonMightLines: string[] = [];
 
-                if (interval.damagers.length < damagersPerRow) {
+            let prescCount: number = 0;
+            this.topDamagersByTime.forEach((interval, index) => {
+                ebonMightLines.push(`{time:${this.secondsToTime(interval.start)}}EM - Thevokr {spell:404269}  `);
+                // 2 casts right on pull
+                if (index === 0) {
+                    let mrtLine: Array<string> = [];
+                    interval.damagers.slice(0, 2).forEach(damager => {
+                        mrtLine.push(this.colorize(damager.name, damager.class));
+                    });
+                    mrtLines.push(`PULL - ${mrtLine.join(' ')}`);
+                    prescCount += 2;
                     return;
                 }
 
-                let mrtLine: Array<string> = [];
-                interval.damagers.slice(0, damagersPerRow).forEach(damager => {
-                    mrtLine.push(this.colorize(damager.name, damager.class));
-                });
+                if (interval.damagers.length < damagersPerEbonMight) {
+                    console.warn("Not enough damagers for interval:", interval);
+                    return;
+                }
 
-                mrtLines.push(`${timeStr} - ${mrtLine.join(' ')}`);
+                let prescOrder: number[] = [0, 2, 1];
+                prescOrder.forEach(i => {
+                    prescCount += 1;
+                    const damager = interval.damagers[i];
+                    const prescTimestamp: string = this.secondsToTime(((prescCount - 2) * this.prescienceCooldownSeconds) + 1);
+
+                    mrtLines.push(`${prescTimestamp} - ${this.colorize(damager.name, damager.class)}`)
+                });
             })
 
-            mrtLines.push('prescGlowsEnd');
+            mrtLines.push('prescGlowsEnd\n');
+            mrtLines.push(ebonMightLines.join('\n'));
             this.mrtNote = mrtLines.join('\n');
         },
 
@@ -356,6 +386,8 @@ export default defineComponent({
                 ebonMightTimings = this.generateEbonMightTimings();
             }
 
+            console.log(ebonMightTimings);
+
             ebonMightTimings.forEach((interval) => {
                 damageDoneRequests.push(this.storeTopDamagersForInterval(
                     this.fight!.start_time + (interval[0] * 1000),
@@ -368,7 +400,7 @@ export default defineComponent({
                     return a.start - b.start;
                 });
 
-                this.makeMrtNote(this.damagersPerRow);
+                this.makeMrtNote(this.damagersPerEbonMight);
 
                 this.formatDamagersForPresentation();
 
