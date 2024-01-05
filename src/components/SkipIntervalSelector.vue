@@ -7,7 +7,7 @@
           <Button @click="removeInterval(index)" icon="pi pi-trash" severity="danger"/>
           <HumanReadableTimeRange :interval="interval" />
         </InputGroup>
-        <Button id="add-interval" label="Add" severity="secondary" outlined @click="addInterval()"/>
+        <Button id="add-interval" size="small" label="Add" severity="secondary" outlined @click="addInterval()"/>
       </div>
       <div>
         <h2>Ebon Might Duration</h2>
@@ -47,7 +47,7 @@
 
 <script lang="ts">
 import { type PropType, defineComponent } from "vue";
-import HumanReadableTimeRange, { type TimeIntervalSeconds } from '@/components/HumanReadableSeconds.vue';
+import HumanReadableTimeRange from '@/components/HumanReadableSeconds.vue';
 import Button from 'primevue/button';
 import InputNumber from 'primevue/inputnumber';
 import InputGroup from 'primevue/inputgroup';
@@ -69,7 +69,7 @@ export default defineComponent({
   },
   props: {
     durationSeconds: Number,
-    skipTimeIntervals: Array as PropType<Array<TimeIntervalSeconds>>,
+    skipTimeIntervals: Array as PropType<Array<[number, number]>>,
     timeInterval: Number,
   },
   data() : {
@@ -84,10 +84,7 @@ export default defineComponent({
       if (!this.skipTimeIntervals) {
         return;
       }
-        this.skipTimeIntervals.push({
-            start: 0,
-            end: 0,
-        });
+        this.skipTimeIntervals.push([0, 0]);
     },
 
     removeInterval(index: number) {

@@ -7,7 +7,16 @@
         </Message>
         <WarcraftLogsInput @select-fight="wclFightSelected" />
         <template v-if="fight">
-            <SkipIntervalSelector
+            <div class="advanced-ebon-might-timings-toggle">
+                <InputSwitch v-model="advancedEbonMightTimings" />
+                <label>Advanced Ebon Might Timings</label>
+            </div>
+
+            <EbonMightTimeSelector v-if="advancedEbonMightTimings"
+                :ebonMightTimings="ebonMightCasts"
+            />
+
+            <SkipIntervalSelector v-else
                 :durationSeconds="fight.end_time - fight.start_time" 
                 :skipTimeIntervals="skipTimeIntervals"
                 :timeInterval="timeInterval"
@@ -70,7 +79,7 @@ import WarcraftLogsInput, { type SelectFightPayload } from '@/components/Warcraf
 import WarcraftLogsDamageDoneService from '@/services/WarcraftLogsDamageDoneService';
 import type WarcraftLogsDamageDoneResponse from '@/types/WarcraftLogsDamageDoneResponse';
 import SkipIntervalSelector from '@/components/SkipIntervalSelector.vue';
-import { type TimeIntervalSeconds } from '@/components/HumanReadableSeconds.vue';
+import EbonMightTimeSelector from '@/components/EbonMightTimeSelector.vue';
 import type WarcraftLogsFight from '@/types/WarcraftLogsFight';
 import Button from 'primevue/button';
 import Textarea from 'primevue/textarea';
@@ -98,6 +107,7 @@ export default defineComponent({
     components: {
         WarcraftLogsInput,
         SkipIntervalSelector,
+        EbonMightTimeSelector,
         Button,
         Textarea,
         DataTable,
@@ -111,7 +121,8 @@ export default defineComponent({
         bossOnly: boolean,
         advancedEbonMightTimings: boolean,
         timeInterval: number,
-        skipTimeIntervals: TimeIntervalSeconds[],
+        skipTimeIntervals: Array<[number, number]>,
+        ebonMightCasts: Array<[number, number]>,
         topDamagersByTime: DamagerInterval[],
         tableValues: Array<Object>,
         ignoreSpellIds: Array<Number>,
@@ -126,6 +137,7 @@ export default defineComponent({
             'advancedEbonMightTimings': false,
             timeInterval: 30,
             skipTimeIntervals: [],
+            ebonMightCasts: [],
             topDamagersByTime: [],
             tableValues: [],
             loading: false,
@@ -287,47 +299,69 @@ export default defineComponent({
             });
         },
 
-        fillDamageDoneTable() {
-            if (!this.fight) {
-                return;
-            }
+        generateEbonMightTimings(): Array<[number, number]> {
+            let timings: Array<[number, number]> = [];
 
-            const fightStartTime = this.fight.start_time;
-            const fightEndTime = this.fight.end_time;
+            const fightStartTime = this.fight!.start_time;
+            const fightEndTime = this.fight!.end_time;
 
-            this.topDamagersByTime = [];
             let start = 0;
             let end = this.timeInterval;
-            this.loading = true;
-            let damageDoneRequests = [];
             while (start < (fightEndTime - fightStartTime) / 1000) {
                 const startTimestamp = fightStartTime + (start * 1000);
                 const endTimestamp = Math.min(fightEndTime, fightStartTime + (end * 1000));
 
-                damageDoneRequests.push(this.storeTopDamagersForInterval(startTimestamp, endTimestamp));
+                timings.push([startTimestamp, endTimestamp]);
 
                 start = end
                 end += this.timeInterval;
 
                 this.skipTimeIntervals.forEach(interval => {
-                    if (interval.start === interval.end) {
+                    if (interval[0] === interval[1]) {
                         return;
                     }
 
                     // current interval starts inside of a skipped interval:
                     // change start to end of skipped interval
-                    if (interval.start <= start && start <= interval.end) {
-                        start = interval.end;
+                    if (interval[0] <= start && start <= interval[1]) {
+                        start = interval[1];
                         end = start + this.timeInterval;
                     }
 
                     // current interval ends inside of a skipped interval:
                     // change end to beginning of interval.
-                    if (interval.start <= end && end <= interval.end) {
-                        end = interval.start;
+                    if (interval[0] <= end && end <= interval[1]) {
+                        end = interval[0];
                     }
                 });
             }
+
+            return timings;
+        },
+
+        fillDamageDoneTable() {
+            if (!this.fight) {
+                return;
+            }
+
+            this.loading = true;
+            this.topDamagersByTime = [];
+            let damageDoneRequests: Promise<any>[] = [];
+
+            let ebonMightTimings: Array<[number, number]> = [];
+
+            if (this.advancedEbonMightTimings) {
+                ebonMightTimings = this.ebonMightCasts;
+            } else {
+                ebonMightTimings = this.generateEbonMightTimings();
+            }
+
+            ebonMightTimings.forEach((interval) => {
+                damageDoneRequests.push(this.storeTopDamagersForInterval(
+                    this.fight!.start_time + (interval[0] * 1000),
+                    this.fight!.start_time + (interval[1] * 1000)
+                ));
+            });
 
             Promise.all(damageDoneRequests).then(results => {
                 this.topDamagersByTime.sort((a, b) => {

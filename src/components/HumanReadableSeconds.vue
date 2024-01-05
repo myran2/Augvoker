@@ -15,26 +15,21 @@ span {
 import { type PropType, defineComponent } from "vue";
 import InputMask from 'primevue/inputmask';
 
-export interface TimeIntervalSeconds {
-    'start': number;
-    'end': number;
-}
-
 export default defineComponent({
   name: "HumanReadableTimeRange",
   components: {
     InputMask,
   },
   props: {
-    interval: Object as PropType<TimeIntervalSeconds>
+    interval: Object as PropType<[number, number]>
   },
   data() : {
     startDisplay: string;
     endDisplay: string;
   } {
     return {
-        startDisplay: this.interval ? this.secondsToTime(this.interval.start) : "0:00",
-        endDisplay: this.interval ? this.secondsToTime(this.interval.end) : "0:00",
+        startDisplay: this.interval ? this.secondsToTime(this.interval[0]) : "0:00",
+        endDisplay: this.interval ? this.secondsToTime(this.interval[1]) : "0:00",
     };
   },
 
@@ -68,7 +63,7 @@ export default defineComponent({
         return;
       }
 
-      this.interval.start = sec;
+      this.interval[0] = sec;
     },
 
     endDisplay: function(newDisplay: string, oldDisplay: string) {
@@ -81,7 +76,7 @@ export default defineComponent({
         return;
       }
 
-      this.interval.end = sec;
+      this.interval[1] = sec;
     }
   },
 });
