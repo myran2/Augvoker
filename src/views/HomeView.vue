@@ -2,7 +2,7 @@
     <div class="home">
         <h1>Augvoker Log Analysis Thing</h1>
         <Message severity="info">
-            Damage attribution in 10.2 is still pretty wacky. It's mostly fine, but expect some inaccuracies.<br>
+            Damage attribution in 10.2 is still pretty wacky. Expect some inaccuracies.<br>
             You can check <a target="_blank" href="https://gist.github.com/ljosberinn/a2f08a53cfe8632a18350eea44e9da3e">this doc</a> or the <span style="font-family: monospace; font-weight: bold;">#augmentation</span> channel of the <a target="_blank" href="https://discord.gg/evoker">Evoker discord</a> for updates.
         </Message>
         <WarcraftLogsInput @select-fight="wclFightSelected" />
