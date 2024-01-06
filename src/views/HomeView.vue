@@ -7,7 +7,7 @@
         </Message>
         <WarcraftLogsInput @select-fight="wclFightSelected" />
         <template v-if="fight">
-            <div class="advanced-ebon-might-timings-toggle" v-if="false">
+            <div class="advanced-ebon-might-timings-toggle">
                 <InputSwitch v-model="advancedEbonMightTimings" />
                 <label>Advanced Ebon Might Timings</label>
             </div>
@@ -24,7 +24,14 @@
             />
 
             <div>
-                <Button id="calculate" label="Calculate" severity="success" :loading="loading" @click="fillDamageDoneTable()"/>
+                <Button
+                    :loading="loading"
+                    :disabled="advancedEbonMightTimings && !ebonMightCasts.length"
+                    @click="fillDamageDoneTable()"
+                    id="calculate"
+                    label="Calculate"
+                    severity="success" 
+                />
             </div>
         </template>
 
@@ -138,21 +145,7 @@ export default defineComponent({
             'advancedEbonMightTimings': false,
             timeInterval: 30,
             skipTimeIntervals: [],
-            ebonMightCasts: [
-                [ 4, 29 ],
-                [ 35, 60 ],
-                [ 70, 106 ],
-                [ 101, 126 ],
-                [ 133, 166 ],
-                [ 166, 198 ],
-                [ 199, 222 ],
-                [ 233, 255 ],
-                [ 265, 292 ],
-                [ 299, 318 ],
-                [ 332, 373 ],
-                [ 366, 408 ],
-                [ 400, 430 ],
-            ],
+            ebonMightCasts: [],
             topDamagersByTime: [],
             tableValues: [],
             loading: false,
@@ -381,7 +374,12 @@ export default defineComponent({
             let ebonMightTimings: Array<[number, number]> = [];
 
             if (this.advancedEbonMightTimings) {
-                ebonMightTimings = this.ebonMightCasts;
+                ebonMightTimings = this.ebonMightCasts.map((interval) => {
+                    return [
+                        this.fight!.start_time + (interval[0] * 1000),
+                        this.fight!.start_time + (interval[1] * 1000)
+                    ];
+                });
             } else {
                 ebonMightTimings = this.generateEbonMightTimings();
             }
@@ -389,10 +387,7 @@ export default defineComponent({
             console.log(ebonMightTimings);
 
             ebonMightTimings.forEach((interval) => {
-                damageDoneRequests.push(this.storeTopDamagersForInterval(
-                    this.fight!.start_time + (interval[0] * 1000),
-                    this.fight!.start_time + (interval[1] * 1000)
-                ));
+                damageDoneRequests.push(this.storeTopDamagersForInterval(interval[0], interval[1]));
             });
 
             Promise.all(damageDoneRequests).then(results => {
