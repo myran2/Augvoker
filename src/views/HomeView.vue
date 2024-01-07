@@ -238,7 +238,7 @@ export default defineComponent({
                 this.topDamagersByTime.push(damagersByTime);
             })
             .catch((e: Error) => {
-                console.log(e);
+                console.error(e);
             });
         },
 
@@ -445,14 +445,12 @@ export default defineComponent({
 
         onEbonMightTimingsUpdated(payload: FightLocalizedTimeRange[]) {
             this.ebonMightCasts = payload;
-            console.log(this.ebonMightCasts);
         }
     },
 
     watch: {
         augvokerName(newVal, oldVal) {
             if (this.loading || !this.topDamagersByTime.length) {
-                console.log('not ready for mrt note yet');
                 return;
             }
 
