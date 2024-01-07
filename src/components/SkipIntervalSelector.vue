@@ -10,7 +10,7 @@
         <Button id="add-interval" size="small" label="Add" severity="secondary" outlined @click="addInterval()"/>
       </div>
       <div>
-        <h2>Ebon Might Duration</h2>
+        <h2>Ebon Might Interval Duration</h2>
         <InputGroup>
           <InputNumber
             v-model="ebonMightDuration"
