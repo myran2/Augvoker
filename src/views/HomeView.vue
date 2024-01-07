@@ -47,22 +47,30 @@
                 <Column field="timeRange" header="Time"></Column>
                 <Column field="player1" header="Player - Damage">
                     <template #body="slotProps">
-                        <span :style="{'color': getColor(slotProps.data.player1.class)}">{{ slotProps.data.player1.name }}</span> - {{ slotProps.data.player1.damage }}
+                        <span :style="{'color': getColor(slotProps.data.player1.class)}">{{ slotProps.data.player1.name }}</span>
+                        - 
+                        {{ formatDamageNumber(slotProps.data.player1.damage) }}
                     </template>
                 </Column>
                 <Column field="player2" header="Player - Damage">
                     <template #body="slotProps">
-                        <span :style="{'color': getColor(slotProps.data.player2.class)}">{{ slotProps.data.player2.name }}</span> - {{ slotProps.data.player2.damage }}
+                        <span :style="{'color': getColor(slotProps.data.player2.class)}">{{ slotProps.data.player2.name }}</span>
+                        -
+                        {{ formatDamageNumber(slotProps.data.player2.damage) }}
                     </template>
                 </Column>
                 <Column field="player3" header="Player - Damage">
                     <template #body="slotProps">
-                        <span :style="{'color': getColor(slotProps.data.player3.class)}">{{ slotProps.data.player3.name }}</span> - {{ slotProps.data.player3.damage }}
+                        <span :style="{'color': getColor(slotProps.data.player3.class)}">{{ slotProps.data.player3.name }}</span>
+                        -
+                        {{ formatDamageNumber(slotProps.data.player3.damage) }}
                     </template>
                 </Column>
                 <Column field="player4" header="Player - Damage">
                     <template #body="slotProps">
-                        <span :style="{'color': getColor(slotProps.data.player4.class)}">{{ slotProps.data.player4.name }}</span> - {{ slotProps.data.player4.damage }}
+                        <span :style="{'color': getColor(slotProps.data.player4.class)}">{{ slotProps.data.player4.name }}</span>
+                        -
+                        {{ formatDamageNumber(slotProps.data.player4.damage) }}
                     </template>
                 </Column>
             </DataTable>
@@ -233,6 +241,21 @@ export default defineComponent({
             const min = Math.floor(seconds / 60);
             const sec = Math.floor(seconds % 60);
             return `${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
+        },
+
+        formatThousands(number: number): string {
+            // If env variable LOCALE is set, use that locale for formatting.
+            return Math.round(number || 0).toLocaleString("en");
+        },
+
+        formatDamageNumber(number: number): string {
+            if (number > 1000000) {
+                return `${(number / 1000000).toFixed(2)}m`;
+            }
+            if (number > 10000) {
+                return `${Math.round(number / 1000)}k`;
+            }
+            return this.formatThousands(number);
         },
 
         getColor(playerClass: string): string {
