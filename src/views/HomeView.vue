@@ -5,7 +5,7 @@
             Damage attribution in 10.2 is still pretty wacky. Expect some inaccuracies.<br>
             You can check <a target="_blank" href="https://gist.github.com/ljosberinn/a2f08a53cfe8632a18350eea44e9da3e">this doc</a> or the <span style="font-family: monospace; font-weight: bold;">#augmentation</span> channel of the <a target="_blank" href="https://discord.gg/evoker">Evoker discord</a> for updates.
         </Message>
-        <WarcraftLogsInput @select-fight="wclFightSelected" />
+        <WarcraftLogsInput @select-fight="wclFightSelected" @select-augvoker="augvokerSelected"/>
         <template v-if="fight">
             <div class="advanced-ebon-might-timings-toggle">
                 <InputSwitch v-model="advancedEbonMightTimings" />
@@ -26,7 +26,7 @@
             <div>
                 <Button
                     :loading="loading"
-                    :disabled="advancedEbonMightTimings && !ebonMightCasts.length"
+                    :disabled="(advancedEbonMightTimings && !ebonMightCasts.length) || augvokerName == ''"
                     @click="fillDamageDoneTable()"
                     id="calculate"
                     label="Calculate"
@@ -37,17 +37,34 @@
 
         <div class="mrt-note" v-if="mrtNote">
             <h2>MRT Note</h2>
-            <span>Intended for use with <a target="_blank" href="https://wago.io/yrmx6ZQSG">this WeakAura</a>.</span>
-            <Textarea v-model="mrtNote" cols="100" autoResize />
+            <span>Intended for use with <a target="_blank" href="https://wago.io/yrmx6ZQSG">this WeakAura</a>.</span><br>
+            <span>Ebon Might Reminders are formatted for use with <a target="_blank" href="https://wago.io/n7l5uN3YM">Kaze's MRT WeakAura.</a></span>
+            <Textarea v-model="mrtNote" readonly cols="100" autoResize />
         </div>
 
         <div v-if="tableValues.length > 0" class="damage-done-table">
             <DataTable stripedRows :value="tableValues">
                 <Column field="timeRange" header="Time"></Column>
-                <Column field="player1" header="Player - Damage"></Column>
-                <Column field="player2" header="Player - Damage"></Column>
-                <Column field="player3" header="Player - Damage"></Column>
-                <Column field="player4" header="Player - Damage"></Column>
+                <Column field="player1" header="Player - Damage">
+                    <template #body="slotProps">
+                        <span :style="{'color': getColor(slotProps.data.player1.class)}">{{ slotProps.data.player1.name }}</span> - {{ slotProps.data.player1.damage }}
+                    </template>
+                </Column>
+                <Column field="player2" header="Player - Damage">
+                    <template #body="slotProps">
+                        <span :style="{'color': getColor(slotProps.data.player2.class)}">{{ slotProps.data.player2.name }}</span> - {{ slotProps.data.player2.damage }}
+                    </template>
+                </Column>
+                <Column field="player3" header="Player - Damage">
+                    <template #body="slotProps">
+                        <span :style="{'color': getColor(slotProps.data.player3.class)}">{{ slotProps.data.player3.name }}</span> - {{ slotProps.data.player3.damage }}
+                    </template>
+                </Column>
+                <Column field="player4" header="Player - Damage">
+                    <template #body="slotProps">
+                        <span :style="{'color': getColor(slotProps.data.player4.class)}">{{ slotProps.data.player4.name }}</span> - {{ slotProps.data.player4.damage }}
+                    </template>
+                </Column>
             </DataTable>
         </div>
     </div>
@@ -137,6 +154,7 @@ export default defineComponent({
         mrtNote: string,
         damagersPerEbonMight: number,
         prescienceCooldownSeconds: number,
+        augvokerName: string,
     } {
         return {
             'reportId': '',
@@ -153,6 +171,7 @@ export default defineComponent({
             ignoreSpellIds: BlacklistedAbilities,
             damagersPerEbonMight: 3,
             prescienceCooldownSeconds: 11,
+            augvokerName: '',
         };
     },
     methods: {
@@ -169,6 +188,10 @@ export default defineComponent({
             if (this.fight) {
                 this.skipTimeIntervals = SkipTimeIntervals[this.fight.boss] ?? [];
             }
+        },
+
+        augvokerSelected(payload: string) {
+            this.augvokerName = payload;
         },
 
         // TODO: run this again with only the blacklisted abilities, but cut everything by 50 (to account for damage gained by the vers buff)%
@@ -212,68 +235,55 @@ export default defineComponent({
             return `${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
         },
 
-        colorize(playerName: string, playerClass: string): string {
-            playerClass = playerClass.toLowerCase()
-            let colorString = ""
-            switch(playerClass) {
+        getColor(playerClass: string): string {
+            switch(playerClass.toLowerCase()) {
                 case "deathknight":
-                    colorString = "C41E3A";
-                    break;
+                    return "#C41E3A";
                 case "demonhunter":
-                    colorString = "A330C9";
-                    break;
+                    return "#A330C9";
                 case "druid":
-                    colorString = "FF7C0A";
-                    break;
+                    return "#FF7C0A";
                 case "evoker":
-                    colorString = "33937F";
-                    break;
+                    return "#33937F";
                 case "hunter":
-                    colorString = "AAD372";
-                    break;
+                    return "#AAD372";
                 case "mage":
-                    colorString = "3FC7EB";
-                    break;
+                    return "#3FC7EB";
                 case "monk":
-                    colorString = "00FF98";
-                    break;
+                    return "#00FF98";
                 case "paladin":
-                    colorString = "F48CBA";
-                    break;
+                    return "#F48CBA";
                 case "priest":
-                    colorString = "FFFFFF";
-                    break;
+                    return "#FFFFFF";
                 case "rogue":
-                    colorString = "FFF468";
-                    break;
+                    return "#FFF468";
                 case "shaman":
-                    colorString = "0070DD";
-                    break;
+                    return "#0070DD";
                 case "warlock":
-                    colorString = "8788EE";
-                    break;
+                    return "#8788EE";
                 case "warrior":
-                    colorString = "C69B6D";
-                    break;
+                    return "#C69B6D";
                 default:
-                    colorString = "FFFFFF";
-                    break;
+                    return "#FFFFFF";
             }
+        },
 
+        colorize(playerName: string, playerClass: string, html: boolean = false): string {
+            let colorString = this.getColor(playerClass).substring(1);
             return `|cff${colorString.toLowerCase()}${playerName}|r`;
         },
 
         makeMrtNote(damagersPerEbonMight: number) {
-            if (!this.topDamagersByTime) {
+            if (!this.topDamagersByTime || !this.topDamagersByTime.length) {
                 return;
             }
 
             let mrtLines: string[] = ['prescGlowsStart'];
-            let ebonMightLines: string[] = [];
+            let ebonMightLines: string[] = ['|cffff00ff--- Ebon Might Reminders---|r'];
 
             let prescCount: number = 0;
             this.topDamagersByTime.forEach((interval, index) => {
-                ebonMightLines.push(`{time:${this.secondsToTime(interval.start)}}EM - Thevokr {spell:404269}  `);
+                ebonMightLines.push(`{time:${this.secondsToTime(interval.start)}}EM - ${this.colorize(this.augvokerName, 'evoker')} {spell:404269}  `);
                 // 2 casts right on pull
                 if (index === 0) {
                     let mrtLine: Array<string> = [];
@@ -314,10 +324,10 @@ export default defineComponent({
 
                 this.tableValues.push({
                     timeRange: `${this.secondsToTime(row.start)} - ${this.secondsToTime(row.end)}`,
-                    player1: `${row.damagers[0].name} - ${row.damagers[0].damage.toLocaleString(undefined)}`,
-                    player2: `${row.damagers[1].name} - ${row.damagers[1].damage.toLocaleString(undefined)}`,
-                    player3: `${row.damagers[2].name} - ${row.damagers[2].damage.toLocaleString(undefined)}`,
-                    player4: `${row.damagers[3].name} - ${row.damagers[3].damage.toLocaleString(undefined)}`,
+                    player1: row.damagers[0],
+                    player2: row.damagers[1],
+                    player3: row.damagers[2],
+                    player4: row.damagers[3],
                 });
             });
         },
@@ -384,8 +394,6 @@ export default defineComponent({
                 ebonMightTimings = this.generateEbonMightTimings();
             }
 
-            console.log(ebonMightTimings);
-
             ebonMightTimings.forEach((interval) => {
                 damageDoneRequests.push(this.storeTopDamagersForInterval(interval[0], interval[1]));
             });
@@ -405,6 +413,17 @@ export default defineComponent({
 
         onTimeIntervalUpdate(payload: number) {
             this.timeInterval = payload;
+        }
+    },
+
+    watch: {
+        augvokerName(newVal, oldVal) {
+            if (this.loading || !this.topDamagersByTime.length) {
+                console.log('not ready for mrt note yet');
+                return;
+            }
+
+            this.makeMrtNote(this.damagersPerEbonMight);
         }
     }
 })

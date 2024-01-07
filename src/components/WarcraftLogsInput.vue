@@ -11,7 +11,7 @@
         </div>
 
         <div class="sub-elements">
-            <Dropdown v-model="selectedFight" :loading=fightsLoading :options="fights" placeholder="Select a Fight" class="w-full md:w-14rem" >
+            <Dropdown v-model="selectedFight" :loading=fightsLoading :options="fights" placeholder="Select a Fight" class="w-full md:w-14rem">
                 <template #value="slotProps">
                     <div v-if="slotProps.value" class="flex align-items-center">
                         <div>#{{ slotProps.value.id }} - {{ slotProps.value.name }} ({{ !slotProps.value.kill ? (slotProps.value.fightPercentage / 100) + '%' : 'Kill' }})</div>
@@ -27,9 +27,14 @@
                 </template>
             </Dropdown>
 
-            <div class="boss-only-toggle">
-                <Checkbox v-model="bossOnly" :binary="true" />
-                <label for="bossOnly">Only Include Damage Done to Bosses</label>
+            <div>
+                <div class="boss-only-toggle">
+                    <Checkbox v-model="bossOnly" :binary="true" />
+                    <label for="bossOnly">Only Include Damage Done to Bosses</label>
+                </div>
+                <Dropdown v-model="selectedAugvoker" :options="fightAugvokers" :loading="fightsLoading" placeholder="Augvoker Name" editable>
+
+                </Dropdown>
             </div>
         </div>
     </div>
@@ -82,7 +87,10 @@ export default defineComponent({
   emits: {
     selectFight(payload: SelectFightPayload) {
         return payload.fight && payload.reportId;
-    } 
+    },
+    selectAugvoker(payload: string) {
+        return payload;
+    }
   },
   components: {
     Dropdown,
@@ -99,6 +107,8 @@ export default defineComponent({
     selectedFight: WarcraftLogsFight | null,
     bossOnly: boolean,
     fightsLoading: boolean,
+    selectedAugvoker: string,
+    fightAugvokers: string[],
   } {
     return {
         error: "",
@@ -109,6 +119,8 @@ export default defineComponent({
         selectedFight: null,
         bossOnly: true,
         fightsLoading: false,
+        selectedAugvoker: "",
+        fightAugvokers: [],
     };
   },
   methods: {
@@ -143,6 +155,10 @@ export default defineComponent({
         WarcraftLogsReportService.get(this.reportId)
             .then((response: WarcraftLogsReportResponse) => {
                 this.error = "";
+
+                this.fightAugvokers = response.data.friendlies.filter((friendly) => {
+                    return friendly.icon === "Evoker-Augmentation";
+                }).map(friendly => { return friendly.name });
 
                 response.data.fights.forEach((fight: WarcraftLogsFight) => {
                     if (fight.boss !== 0) {
@@ -208,6 +224,10 @@ export default defineComponent({
             'fight': this.selectedFight,
             'bossOnly': this.bossOnly,
         });
+    },
+
+    selectedAugvoker(newVal, oldVal) {
+        this.$emit('selectAugvoker', this.selectedAugvoker);
     }
   }
 });
