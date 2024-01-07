@@ -48,6 +48,7 @@
 <script lang="ts">
 import { type PropType, defineComponent } from "vue";
 import HumanReadableTimeRange from '@/components/HumanReadableSeconds.vue';
+import type FightLocalizedTimeRange from "@/types/FightLocalizedTimeRange";
 import Button from 'primevue/button';
 import InputNumber from 'primevue/inputnumber';
 import InputGroup from 'primevue/inputgroup';
@@ -69,7 +70,7 @@ export default defineComponent({
   },
   props: {
     durationSeconds: Number,
-    skipTimeIntervals: Array as PropType<Array<[number, number]>>,
+    skipTimeIntervals: Array as PropType<FightLocalizedTimeRange[]>,
     timeInterval: Number,
   },
   data() : {
@@ -84,7 +85,10 @@ export default defineComponent({
       if (!this.skipTimeIntervals) {
         return;
       }
-        this.skipTimeIntervals.push([0, 0]);
+        this.skipTimeIntervals.push({
+          start: 0,
+          end: 0,
+        });
     },
 
     removeInterval(index: number) {

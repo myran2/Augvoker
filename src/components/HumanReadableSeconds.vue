@@ -13,6 +13,7 @@ span {
 
 <script lang="ts">
 import { type PropType, defineComponent } from "vue";
+import type FightLocalizedTimeRange from "@/types/FightLocalizedTimeRange";
 import InputMask from 'primevue/inputmask';
 
 export default defineComponent({
@@ -21,15 +22,15 @@ export default defineComponent({
     InputMask,
   },
   props: {
-    interval: Object as PropType<[number, number]>
+    interval: Object as PropType<FightLocalizedTimeRange>
   },
   data() : {
     startDisplay: string;
     endDisplay: string;
   } {
     return {
-        startDisplay: this.interval ? this.secondsToTime(this.interval[0]) : "0:00",
-        endDisplay: this.interval ? this.secondsToTime(this.interval[1]) : "0:00",
+        startDisplay: this.interval ? this.secondsToTime(this.interval.start) : "0:00",
+        endDisplay: this.interval ? this.secondsToTime(this.interval.end) : "0:00",
     };
   },
 
@@ -63,7 +64,7 @@ export default defineComponent({
         return;
       }
 
-      this.interval[0] = sec;
+      this.interval.start = sec;
     },
 
     endDisplay: function(newDisplay: string, oldDisplay: string) {
@@ -76,7 +77,12 @@ export default defineComponent({
         return;
       }
 
-      this.interval[1] = sec;
+      this.interval.end = sec;
+    },
+
+    interval: function(newValue, oldValue) {
+      this.startDisplay = this.secondsToTime(this.interval!.start);
+      this.endDisplay = this.secondsToTime(this.interval!.end);
     }
   },
 });

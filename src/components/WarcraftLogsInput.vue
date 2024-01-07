@@ -27,14 +27,16 @@
                 </template>
             </Dropdown>
 
-            <div>
+            <div class="right-group">
                 <div class="boss-only-toggle">
                     <Checkbox v-model="bossOnly" :binary="true" />
                     <label for="bossOnly">Only Include Damage Done to Bosses</label>
                 </div>
-                <Dropdown v-model="selectedAugvoker" :options="fightAugvokers" :loading="fightsLoading" placeholder="Augvoker Name" editable>
-
-                </Dropdown>
+                <div>
+                    <label for="selectedAugvoker" style="padding-right: 5px">Augvoker Name</label>
+                    <Dropdown id="selectedAugvoker" v-model="selectedAugvoker" :options="fightAugvokers" :loading="fightsLoading" placeholder="Augvoker Name" editable>
+                    </Dropdown>
+                </div>
             </div>
         </div>
     </div>
@@ -52,6 +54,14 @@
         display: flex;
         flex-flow: row nowrap;
         justify-content: space-between;
+        align-items: center;
+
+        .right-group {
+            display: flex;
+            flex-flow: column nowrap;
+            row-gap: 10px;
+            align-items: flex-end;
+        }
     }
 
     .boss-only-toggle {

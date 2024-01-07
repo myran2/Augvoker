@@ -13,7 +13,11 @@
             </div>
 
             <EbonMightTimeSelector v-if="advancedEbonMightTimings"
-                :ebonMightTimings="ebonMightCasts"
+                :report-id="reportId"
+                :start-timestamp="fight.start_time"
+                :end-timestamp="fight.end_time"
+                :augvokerName="augvokerName"
+                @ebonMightTimingsChanged="onEbonMightTimingsUpdated"
             />
 
             <SkipIntervalSelector v-else
@@ -113,6 +117,7 @@ import type WarcraftLogsDamageDoneResponse from '@/types/WarcraftLogsDamageDoneR
 import SkipIntervalSelector from '@/components/SkipIntervalSelector.vue';
 import EbonMightTimeSelector from '@/components/EbonMightTimeSelector.vue';
 import type WarcraftLogsFight from '@/types/WarcraftLogsFight';
+import type FightLocalizedTimeRange from "@/types/FightLocalizedTimeRange";
 import Button from 'primevue/button';
 import Textarea from 'primevue/textarea';
 import DataTable from 'primevue/datatable';
@@ -153,11 +158,11 @@ export default defineComponent({
         bossOnly: boolean,
         advancedEbonMightTimings: boolean,
         timeInterval: number,
-        skipTimeIntervals: Array<[number, number]>,
-        ebonMightCasts: Array<[number, number]>,
+        skipTimeIntervals: FightLocalizedTimeRange[],
+        ebonMightCasts: FightLocalizedTimeRange[],
         topDamagersByTime: DamagerInterval[],
         tableValues: Array<Object>,
-        ignoreSpellIds: Array<Number>,
+        ignoreSpellIds: number[],
         loading: boolean,
         mrtNote: string,
         damagersPerEbonMight: number,
@@ -373,21 +378,21 @@ export default defineComponent({
                 end += this.timeInterval;
 
                 this.skipTimeIntervals.forEach(interval => {
-                    if (interval[0] === interval[1]) {
+                    if (interval.start === interval.end) {
                         return;
                     }
 
                     // current interval starts inside of a skipped interval:
                     // change start to end of skipped interval
-                    if (interval[0] <= start && start <= interval[1]) {
-                        start = interval[1];
+                    if (interval.start <= start && start <= interval.end) {
+                        start = interval.end;
                         end = start + this.timeInterval;
                     }
 
                     // current interval ends inside of a skipped interval:
                     // change end to beginning of interval.
-                    if (interval[0] <= end && end <= interval[1]) {
-                        end = interval[0];
+                    if (interval.start <= end && end <= interval.end) {
+                        end = interval.start;
                     }
                 });
             }
@@ -409,8 +414,8 @@ export default defineComponent({
             if (this.advancedEbonMightTimings) {
                 ebonMightTimings = this.ebonMightCasts.map((interval) => {
                     return [
-                        this.fight!.start_time + (interval[0] * 1000),
-                        this.fight!.start_time + (interval[1] * 1000)
+                        this.fight!.start_time + (interval.start * 1000),
+                        this.fight!.start_time + (interval.end * 1000)
                     ];
                 });
             } else {
@@ -436,6 +441,11 @@ export default defineComponent({
 
         onTimeIntervalUpdate(payload: number) {
             this.timeInterval = payload;
+        },
+
+        onEbonMightTimingsUpdated(payload: FightLocalizedTimeRange[]) {
+            this.ebonMightCasts = payload;
+            console.log(this.ebonMightCasts);
         }
     },
 
