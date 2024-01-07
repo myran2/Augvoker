@@ -54,7 +54,7 @@
         display: flex;
         flex-flow: row nowrap;
         justify-content: space-between;
-        align-items: center;
+        align-items: flex-start;
 
         .right-group {
             display: flex;
