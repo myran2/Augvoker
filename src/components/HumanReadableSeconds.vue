@@ -1,14 +1,27 @@
 <template>
+  <div class="time-range">
     <InputMask v-model="startDisplay" mask="9:99"/>
     <span>-</span>
     <InputMask v-model="endDisplay" mask="9:99"/>
+    <template v-if="showDiff && interval && (interval.end - interval.start) > 0">
+      <span>{{ interval.end - interval.start }}s</span>
+    </template>
+  </div>
 </template>
 
 <style scoped>
+.time-range {
+  width: 100%;
+  display: flex;
+  flex-flow: row nowrap;
+  justify-content: flex-start;
+  align-items: center;
+  column-gap: 10px;
+}
 span {
-  padding: 2px 8px 0px;
   font-size: 25px;
 }
+
 </style>
 
 <script lang="ts">
@@ -22,7 +35,8 @@ export default defineComponent({
     InputMask,
   },
   props: {
-    interval: Object as PropType<FightLocalizedTimeRange>
+    interval: Object as PropType<FightLocalizedTimeRange>,
+    showDiff: Boolean
   },
   data() : {
     startDisplay: string;

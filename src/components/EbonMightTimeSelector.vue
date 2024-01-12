@@ -6,7 +6,7 @@
       </div>
         <InputGroup v-for="(ebonMightCast, index) in ebonMightTimings" class="interval">
             <Button @click="removeEbonMightCast(index)" icon="pi pi-trash" severity="danger"/>
-            <HumanReadableTimeRange :interval="ebonMightCast" />
+            <HumanReadableTimeRange :interval="ebonMightCast" :show-diff="true"/>
         </InputGroup>
         <Button id="add-interval" size="small" label="Add" severity="secondary" outlined @click="addInterval()"/>
     </div>
@@ -73,7 +73,7 @@ export default defineComponent({
     endTimestamp: Number,
   },
   data() : {
-    ebonMightTimings: FightLocalizedTimeRange[]
+    ebonMightTimings: Array<FightLocalizedTimeRange>
   } {
     return {
       ebonMightTimings: []
@@ -84,10 +84,20 @@ export default defineComponent({
       if (!this.ebonMightTimings) {
         return;
       }
+
+      const lastInterval: FightLocalizedTimeRange = this.ebonMightTimings.slice(-1)[0];
+      if (!lastInterval) {
         this.ebonMightTimings.push({
           start: 0,
-          end: 0
-        });
+          end: 0,
+        })
+        return;
+      }
+
+      this.ebonMightTimings.push({
+        start: lastInterval.end + 1,
+        end: lastInterval.end + (lastInterval.end - lastInterval.start),
+      });
     },
 
     removeEbonMightCast(index: number) {

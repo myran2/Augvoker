@@ -366,8 +366,8 @@ export default defineComponent({
             const fightStartTime = this.fight!.start_time;
             const fightEndTime = this.fight!.end_time;
 
-            let start = 0;
-            let end = this.timeInterval;
+            let start = 5;
+            let end = start + this.timeInterval;
             while (start < (fightEndTime - fightStartTime) / 1000) {
                 const startTimestamp = fightStartTime + (start * 1000);
                 const endTimestamp = Math.min(fightEndTime, fightStartTime + (end * 1000));
