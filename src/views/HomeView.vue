@@ -43,38 +43,58 @@
             <h2>MRT Note</h2>
             <span>Intended for use with <a target="_blank" href="https://wago.io/yrmx6ZQSG">this WeakAura</a>.</span><br>
             <span>Ebon Might Reminders are formatted for use with <a target="_blank" href="https://wago.io/n7l5uN3YM">Kaze's MRT WeakAura.</a></span>
-            <Textarea v-model="mrtNote" readonly cols="100" autoResize />
+            <Textarea v-model="mrtNote" readonly cols="5"/>
         </div>
 
-        <div v-if="tableValues.length > 0" class="damage-done-table">
-            <DataTable stripedRows :value="tableValues">
+        <Message v-if="unclaimedPresciences.length > 0" severity="warn">
+            Your selected Ebon Might timings will result in <strong>{{ unclaimedPresciences.length }}</strong> Presciences that will expire before you cast Ebon Might again.<br>
+            The WeakAura expects you to cast Prescience on cooldown in order to accurately predict which casts will be double-duration.<br><br>
+            In a future update, this service will automatically choose an optimal target.<br>
+            For now, since the impact of these casts is much lower, a random dps that is unlikely to already have Prescience will be selected.<br>
+            These casts/targets appear just before the prescGlowsEnd line in the note if you would like to manually change them.
+        </Message>
+
+        <div v-if="damagerTableValues.length > 0" class="damage-done-table">
+            <DataTable stripedRows :value="damagerTableValues">
                 <Column field="timeRange" header="Time"></Column>
-                <Column field="player1" header="Player - Damage">
+                <Column field="player1" header="Player - Damage (Presc. Time)">
                     <template #body="slotProps">
                         <span :style="{'color': getColor(slotProps.data.player1.class)}">{{ slotProps.data.player1.name }}</span>
                         - 
                         {{ formatDamageNumber(slotProps.data.player1.damage) }}
+                        <span v-if="slotProps.data.player1.prescTimestamp !== null" class="presc-timestamp">
+                            ({{ secondsToTime(slotProps.data.player1.prescTimestamp) }})
+                        </span>
                     </template>
                 </Column>
-                <Column field="player2" header="Player - Damage">
+                <Column field="player2" header="Player - Damage (Presc. Time)">
                     <template #body="slotProps">
                         <span :style="{'color': getColor(slotProps.data.player2.class)}">{{ slotProps.data.player2.name }}</span>
-                        -
+                        - 
                         {{ formatDamageNumber(slotProps.data.player2.damage) }}
+                        <span v-if="slotProps.data.player2.prescTimestamp !== null" class="presc-timestamp">
+                            ({{ secondsToTime(slotProps.data.player2.prescTimestamp) }})
+                        </span>
                     </template>
                 </Column>
-                <Column field="player3" header="Player - Damage">
+                <Column field="player3" header="Player - Damage (Presc. Time)">
                     <template #body="slotProps">
                         <span :style="{'color': getColor(slotProps.data.player3.class)}">{{ slotProps.data.player3.name }}</span>
-                        -
+                        - 
                         {{ formatDamageNumber(slotProps.data.player3.damage) }}
+                        <span v-if="slotProps.data.player3.prescTimestamp !== null" class="presc-timestamp">
+                            ({{ secondsToTime(slotProps.data.player3.prescTimestamp) }})
+                        </span>
                     </template>
                 </Column>
-                <Column field="player4" header="Player - Damage">
+                <Column field="player4" header="Player - Damage (Presc. Time)">
                     <template #body="slotProps">
                         <span :style="{'color': getColor(slotProps.data.player4.class)}">{{ slotProps.data.player4.name }}</span>
-                        -
+                        - 
                         {{ formatDamageNumber(slotProps.data.player4.damage) }}
+                        <span v-if="slotProps.data.player4.prescTimestamp !== null" class="presc-timestamp">
+                            ({{ secondsToTime(slotProps.data.player4.prescTimestamp) }})
+                        </span>
                     </template>
                 </Column>
             </DataTable>
@@ -100,11 +120,18 @@
         padding-top: 3%;
         textarea {
             width: 100%;
+            height: 150px;
+            resize: vertical;
         }
     }
 
     .damage-done-table {
         padding-top: 3%;
+    }
+
+    .presc-timestamp {
+        font-size: 10px;
+        font-style: italic;
     }
 }
 </style>
@@ -126,18 +153,25 @@ import Message from 'primevue/message';
 import InputSwitch from 'primevue/inputswitch';
 import { BlacklistedAbilities } from '@/constants/BlacklistedAbilities';
 import { SkipTimeIntervals } from '@/constants/SkipTimeIntervals';
+import { findAncestor } from 'typescript';
 
-interface WclDamager {
+type Damager = {
     name: string;
     damage: number;
     class: string;
+    prescTimestamp: number|null;
 }
 
-interface DamagerInterval {
+type DamagerInterval = {
     start: number;
     end: number;
-    damagers: WclDamager[];
+    damagers: Damager[];
 }
+
+type PrescienceCast = {
+    duration: FightLocalizedTimeRange,
+    claimed: boolean,
+};
 
 export default defineComponent({
     name: 'HomeView',
@@ -160,31 +194,37 @@ export default defineComponent({
         timeInterval: number,
         skipTimeIntervals: FightLocalizedTimeRange[],
         ebonMightCasts: FightLocalizedTimeRange[],
-        topDamagersByTime: DamagerInterval[],
+        topDamagersByTime: Array<DamagerInterval>,
+        unclaimedPresciences: Array<PrescienceCast>
         tableValues: Array<Object>,
         ignoreSpellIds: number[],
         loading: boolean,
         mrtNote: string,
         damagersPerEbonMight: number,
         prescienceCooldownSeconds: number,
+        estimatedPrescienceDurationSeconds: number,
         augvokerName: string,
+        presciencePrecast: boolean,
     } {
         return {
             'reportId': '',
             'fight': null,
             'bossOnly': true,
             'advancedEbonMightTimings': false,
-            timeInterval: 30,
+            timeInterval: 27,
             skipTimeIntervals: [],
             ebonMightCasts: [],
             topDamagersByTime: [],
+            unclaimedPresciences: [],
             tableValues: [],
             loading: false,
             mrtNote: "",
             ignoreSpellIds: BlacklistedAbilities,
             damagersPerEbonMight: 3,
             prescienceCooldownSeconds: 11,
+            estimatedPrescienceDurationSeconds: 22,
             augvokerName: '',
+            presciencePrecast: false,
         };
     },
     methods: {
@@ -196,6 +236,7 @@ export default defineComponent({
             this.mrtNote = "";
             this.tableValues = [];
             this.topDamagersByTime = [];
+            this.unclaimedPresciences = [];
 
             // prefill some mythic fight skip intervals
             if (this.fight) {
@@ -208,11 +249,11 @@ export default defineComponent({
         },
 
         // TODO: run this again with only the blacklisted abilities, but cut everything by 50 (to account for damage gained by the vers buff)%
-        async storeTopDamagersForInterval(start: number, end: number): Promise<any> {
+        async storeTopDamagersForInterval(start: number, end: number, storage: Array<DamagerInterval>): Promise<any> {
             const abilityBlacklist = `ability.id NOT IN (${this.ignoreSpellIds.join(', ')})`;
             return WarcraftLogsDamageDoneService.get(this.reportId, start, end, this.bossOnly, abilityBlacklist)
             .then((response: WarcraftLogsDamageDoneResponse) => {
-                const sortedPlayers = response.data.entries.sort((a:any, b:any) => {
+                const sortedPlayers = response.data.entries.sort((a, b) => {
                     if (a.icon == 'Evoker-Augmentation') {
                         return 1;
                     }
@@ -231,11 +272,12 @@ export default defineComponent({
                             name: player.name,
                             class: player.icon.split('-')[0],
                             damage: player.total,
-                        } as WclDamager;
+                            prescTimestamp: null,
+                        } as Damager;
                     })
                 }
 
-                this.topDamagersByTime.push(damagersByTime);
+                storage.push(damagersByTime);
             })
             .catch((e: Error) => {
                 console.error(e);
@@ -243,9 +285,29 @@ export default defineComponent({
         },
 
         secondsToTime(seconds: number): string {
+            if (seconds === 0) {
+                return "PULL";
+            }
+
             const min = Math.floor(seconds / 60);
             const sec = Math.floor(seconds % 60);
             return `${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
+        },
+
+        timeToSeconds(time: string): number {
+            if (time.includes('_')) {
+                return 0;
+            }
+
+            if (time === "PULL") {
+                return 0;
+            }
+            
+            const parts = time.split(':');
+            const min = parseInt(parts[0]);
+            const sec = parseInt(parts[1]);
+
+            return (60 * min) + sec;
         },
 
         formatThousands(number: number): string {
@@ -296,68 +358,152 @@ export default defineComponent({
             }
         },
 
-        colorize(playerName: string, playerClass: string, html: boolean = false): string {
+        colorize(playerName: string, playerClass: string): string {
             let colorString = this.getColor(playerClass).substring(1);
             return `|cff${colorString.toLowerCase()}${playerName}|r`;
         },
 
-        makeMrtNote(damagersPerEbonMight: number) {
-            if (!this.topDamagersByTime || !this.topDamagersByTime.length) {
+        getGoodColorizedPrescienceTarget(castTime: number): string {
+            let targetName = this.augvokerName;
+            let targetClass = 'evoker';
+
+            let finalTargets = this.topDamagersByTime.map((interval: DamagerInterval) => {
+                return {
+                    damager: interval.damagers[3],
+                    start: interval.start,
+                    end: interval.end,
+                };
+            }).filter((target) => {
+                return target.start < castTime && target.end > castTime;
+            });
+
+            if (finalTargets.length) {
+                targetName = finalTargets[0].damager.name;
+                targetClass = finalTargets[0].damager.class;
+            }
+            return this.colorize(targetName, targetClass);
+        },
+
+        assignPrescienceTimes() {
+            if (!this.topDamagersByTime || !this.topDamagersByTime.length || !this.fight) {
                 return;
             }
 
-            let mrtLines: string[] = ['prescGlowsStart'];
+            const fightDurationSeconds = (this.fight.end_time - this.fight.start_time) / 1000;
+
+            // fill in the first of 2 on-pull prescience casts.
+            // if precasting prescience, this one will be a double duration.
+            let possiblePrescienceCasts: PrescienceCast[] = [
+                {
+                    duration: {
+                        start: 0,
+                        end: this.estimatedPrescienceDurationSeconds * (this.presciencePrecast ? 2 : 1),
+                    },
+                    claimed: false,
+                }
+            ];
+
+            let prescTimestamp: number = 0;
+            let prescCastCount: number = this.presciencePrecast ? 3 : 1;
+            while (prescTimestamp < fightDurationSeconds) {
+                prescCastCount++;
+
+                possiblePrescienceCasts.push({
+                    duration: {
+                        start: prescTimestamp,
+                        end: prescTimestamp + (this.estimatedPrescienceDurationSeconds * (prescCastCount % 3 === 0 ? 2 : 1))
+                    },
+                    claimed: false
+                });
+
+                prescTimestamp += this.prescienceCooldownSeconds;
+            }
+
+            this.topDamagersByTime.forEach((interval: DamagerInterval) => {
+                let damagerIndex: number = 0;
+
+                possiblePrescienceCasts.filter((cast) => {
+                    // find prescience casts that:
+                    //  are unclaimed
+                    //  start before this EM cast
+                    //  buff ends after this EM cast
+                    return !cast.claimed 
+                        && cast.duration.end > interval.start
+                        && cast.duration.start < interval.start;
+                }).sort((a: PrescienceCast, b: PrescienceCast) => {
+                    // sort casts by how close presc is to falling off when we cast EM.
+                    // we want higher damage players to have the longer presc duration so we lose less damage if we mess up somewhere.
+                    return (b.duration.end - interval.start) - (a.duration.end - interval.start);
+                }).forEach((cast: PrescienceCast) => {
+                    if (damagerIndex >= interval.damagers.length) {
+                        return;
+                    }
+                    cast.claimed = true;
+                    interval.damagers[damagerIndex].prescTimestamp = cast.duration.start;
+                    damagerIndex++;
+                });
+            });
+
+            this.unclaimedPresciences = possiblePrescienceCasts.filter((cast: PrescienceCast) => {
+                return !cast.claimed;
+            });
+            console.log('unclaimed prescience casts', this.unclaimedPresciences);
+        },
+
+        makeMrtNote() {
+            let mrtLines: string[] = [];
             let ebonMightLines: string[] = ['|cffff00ff--- Ebon Might Reminders---|r'];
 
-            let prescCount: number = 0;
-            this.topDamagersByTime.forEach((interval, index) => {
+            this.topDamagersByTime.forEach((interval: DamagerInterval) => {
                 ebonMightLines.push(`{time:${this.secondsToTime(interval.start)}}EM - ${this.colorize(this.augvokerName, 'evoker')} {spell:404269}  `);
-                // 2 casts right on pull
-                if (index === 0) {
-                    let mrtLine: Array<string> = [];
-                    interval.damagers.slice(0, 2).forEach(damager => {
+
+                // skip really short time intervals
+                if ((interval.end - interval.start) <= 3) {
+                    return;
+                }
+
+                let mrtLine: string[] = [];
+                let prevPrescTimestamp: number = -1;
+                interval.damagers.forEach((damager: Damager) => {
+                    if (damager.prescTimestamp === null) {
+                        return;
+                    }
+
+                    // multiple presciences assigned at the same time
+                    if (prevPrescTimestamp === damager.prescTimestamp) {
                         mrtLine.push(this.colorize(damager.name, damager.class));
-                    });
-                    mrtLines.push(`PULL - ${mrtLine.join(' ')}`);
-                    prescCount += 2;
-                    return;
-                }
+                        if (mrtLine.length > 2) {
+                            console.warn('More than 2 presciences assigned at the same timestamp', interval);
+                        }
+                    } else {
+                        if (mrtLine.length) {
+                            // write previous line now that we're done with it
+                            mrtLines.push(mrtLine.join(" "));
+                        }
 
-                if (interval.damagers.length < damagersPerEbonMight) {
-                    console.warn("Not enough damagers for interval:", interval);
-                    return;
-                }
-
-                let prescOrder: number[] = [0, 2, 1];
-                prescOrder.forEach(i => {
-                    prescCount += 1;
-                    const damager = interval.damagers[i];
-                    const prescTimestamp: string = this.secondsToTime(((prescCount - 2) * this.prescienceCooldownSeconds) + 1);
-
-                    mrtLines.push(`${prescTimestamp} - ${this.colorize(damager.name, damager.class)}`)
+                        const displayTimestamp: string = this.secondsToTime(damager.prescTimestamp);
+                        mrtLine = [`${displayTimestamp} - ${this.colorize(damager.name, damager.class)}`];
+                    }
+                    prevPrescTimestamp = damager.prescTimestamp;
                 });
+                // flush any remaining lines
+                if (mrtLine.length) {
+                    mrtLines.push(mrtLine.join(" "));
+                }
             })
 
+            mrtLines.sort((a: string, b: string) => {
+                const aTimestamp = a.split(" - ")[0];
+                const bTimestamp = b.split(" - ")[0];
+                return this.timeToSeconds(aTimestamp) - this.timeToSeconds(bTimestamp);
+            });
+            this.unclaimedPresciences.forEach((cast: PrescienceCast) => {
+                mrtLines.push(`${this.secondsToTime(cast.duration.start)} - ${this.getGoodColorizedPrescienceTarget(cast.duration.start)}`);
+            });
+            mrtLines.unshift('prescGlowsStart');
             mrtLines.push('prescGlowsEnd\n');
             mrtLines.push(ebonMightLines.join('\n'));
             this.mrtNote = mrtLines.join('\n');
-        },
-
-        formatDamagersForPresentation() {
-            this.tableValues = [];
-            this.topDamagersByTime.forEach((row: DamagerInterval) => {
-                if (row.damagers.length < 4) {
-                    return;
-                }
-
-                this.tableValues.push({
-                    timeRange: `${this.secondsToTime(row.start)} - ${this.secondsToTime(row.end)}`,
-                    player1: row.damagers[0],
-                    player2: row.damagers[1],
-                    player3: row.damagers[2],
-                    player4: row.damagers[3],
-                });
-            });
         },
 
         generateEbonMightTimings(): Array<[number, number]> {
@@ -423,7 +569,7 @@ export default defineComponent({
             }
 
             ebonMightTimings.forEach((interval) => {
-                damageDoneRequests.push(this.storeTopDamagersForInterval(interval[0], interval[1]));
+                damageDoneRequests.push(this.storeTopDamagersForInterval(interval[0], interval[1], this.topDamagersByTime));
             });
 
             Promise.all(damageDoneRequests).then(results => {
@@ -431,9 +577,8 @@ export default defineComponent({
                     return a.start - b.start;
                 });
 
-                this.makeMrtNote(this.damagersPerEbonMight);
-
-                this.formatDamagersForPresentation();
+                this.assignPrescienceTimes();
+                this.makeMrtNote();
 
                 this.loading = false;
             });
@@ -454,8 +599,26 @@ export default defineComponent({
                 return;
             }
 
-            this.makeMrtNote(this.damagersPerEbonMight);
-        }
+            this.makeMrtNote();
+        },
+    },
+
+    computed: {
+        damagerTableValues() {
+            return this.topDamagersByTime.map((row: DamagerInterval) => {
+                if (row.damagers.length < 4) {
+                    return null;
+                }
+
+                return {
+                    timeRange: `${this.secondsToTime(row.start)} - ${this.secondsToTime(row.end)}`,
+                    player1: row.damagers[0],
+                    player2: row.damagers[1],
+                    player3: row.damagers[2],
+                    player4: row.damagers[3],
+                };
+            });
+        },
     }
 })
 </script>
