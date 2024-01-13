@@ -196,7 +196,7 @@ export default defineComponent({
         skipTimeIntervals: FightLocalizedTimeRange[],
         ebonMightCasts: FightLocalizedTimeRange[],
         topDamagersByTime: Array<DamagerInterval>,
-        unclaimedPresciences: Array<PrescienceCast>
+        unclaimedPresciences: Array<FightLocalizedTimeRange>
         tableValues: Array<Object>,
         ignoreSpellIds: number[],
         loading: boolean,
@@ -289,7 +289,7 @@ export default defineComponent({
             });
         },
 
-        getGoodColorizedPrescienceTarget(castTime: number): string {
+        getGoodColorizedPrescienceTarget(prescienceCast: FightLocalizedTimeRange): string {
             let targetName = this.augvokerName;
             let targetClass = 'evoker';
 
@@ -300,7 +300,7 @@ export default defineComponent({
                     end: interval.end,
                 };
             }).filter((target) => {
-                return target.start < castTime && target.end > castTime;
+                return target.start < prescienceCast.start && target.end > prescienceCast.start;
             });
 
             if (finalTargets.length) {
@@ -310,42 +310,42 @@ export default defineComponent({
             return colorize(targetName, targetClass);
         },
 
-        assignPrescienceTimes() {
-            if (!this.topDamagersByTime || !this.topDamagersByTime.length || !this.fight) {
-                return;
-            }
-
-            const fightDurationSeconds = (this.fight.end_time - this.fight.start_time) / 1000;
-
+        assignPrescienceTimes(
+            topDamagersByTime: DamagerInterval[],
+            fightEndSeconds: number,
+            config: {
+                presciencePrecast: boolean,
+                estimatedPrescienceDurationSeconds: number,
+                prescienceCooldownSeconds: number,
+        }): FightLocalizedTimeRange[] {
             // fill in the first of 2 on-pull prescience casts.
             // if precasting prescience, this one will be a double duration.
             let possiblePrescienceCasts: PrescienceCast[] = [
                 {
                     duration: {
                         start: 0,
-                        end: this.estimatedPrescienceDurationSeconds * (this.presciencePrecast ? 2 : 1),
+                        end: config.estimatedPrescienceDurationSeconds * (config.presciencePrecast ? 2 : 1),
                     },
                     claimed: false,
                 }
             ];
 
             let prescTimestamp: number = 0;
-            let prescCastCount: number = this.presciencePrecast ? 3 : 1;
-            while (prescTimestamp < fightDurationSeconds) {
+            let prescCastCount: number = config.presciencePrecast ? 3 : 1;
+            while (prescTimestamp < fightEndSeconds) {
                 prescCastCount++;
 
                 possiblePrescienceCasts.push({
                     duration: {
                         start: prescTimestamp,
-                        end: prescTimestamp + (this.estimatedPrescienceDurationSeconds * (prescCastCount % 3 === 0 ? 2 : 1))
+                        end: prescTimestamp + (config.estimatedPrescienceDurationSeconds * (prescCastCount % 3 === 0 ? 2 : 1))
                     },
                     claimed: false
                 });
-
-                prescTimestamp += this.prescienceCooldownSeconds;
+                prescTimestamp += config.prescienceCooldownSeconds;
             }
 
-            this.topDamagersByTime.forEach((interval: DamagerInterval) => {
+            topDamagersByTime.forEach((interval: DamagerInterval) => {
                 let damagerIndex: number = 0;
 
                 possiblePrescienceCasts.filter((cast) => {
@@ -370,10 +370,11 @@ export default defineComponent({
                 });
             });
 
-            this.unclaimedPresciences = possiblePrescienceCasts.filter((cast: PrescienceCast) => {
+            return possiblePrescienceCasts.filter((cast: PrescienceCast) => {
                 return !cast.claimed;
+            }).map((cast: PrescienceCast) => {
+                return cast.duration;
             });
-            console.log('unclaimed prescience casts', this.unclaimedPresciences);
         },
 
         makeMrtNote() {
@@ -423,8 +424,8 @@ export default defineComponent({
                 const bTimestamp = b.split(" - ")[0];
                 return timeToSeconds(aTimestamp) - timeToSeconds(bTimestamp);
             });
-            this.unclaimedPresciences.forEach((cast: PrescienceCast) => {
-                mrtLines.push(`${secondsToTime(cast.duration.start)} - ${this.getGoodColorizedPrescienceTarget(cast.duration.start)}`);
+            this.unclaimedPresciences.forEach((cast: FightLocalizedTimeRange) => {
+                mrtLines.push(`${secondsToTime(cast.start)} - ${this.getGoodColorizedPrescienceTarget(cast)}`);
             });
             mrtLines.unshift('prescGlowsStart');
             mrtLines.push('prescGlowsEnd\n');
@@ -479,6 +480,8 @@ export default defineComponent({
                 return;
             }
 
+            const fightTimeSeconds = (this.fight.end_time - this.fight.start_time) / 1000;
+
             this.loading = true;
             this.topDamagersByTime = [];
             let damageDoneRequests: Promise<any>[] = [];
@@ -505,7 +508,11 @@ export default defineComponent({
                     return a.start - b.start;
                 });
 
-                this.assignPrescienceTimes();
+                this.assignPrescienceTimes(this.topDamagersByTime, fightTimeSeconds, {
+                    presciencePrecast: this.presciencePrecast,
+                    estimatedPrescienceDurationSeconds: this.estimatedPrescienceDurationSeconds,
+                    prescienceCooldownSeconds: this.prescienceCooldownSeconds,
+                });
                 this.makeMrtNote();
 
                 this.loading = false;
