@@ -144,6 +144,7 @@ import SkipIntervalSelector from '@/components/SkipIntervalSelector.vue';
 import EbonMightTimeSelector from '@/components/EbonMightTimeSelector.vue';
 import type WarcraftLogsFight from '@/types/WarcraftLogsFight';
 import type FightLocalizedTimeRange from "@/types/FightLocalizedTimeRange";
+import type TimeRangeMiliseconds from "@/types/TimeRangeMiliseconds";
 import type WarcraftLogsDamageDoneResponse from '@/types/WarcraftLogsDamageDoneResponse';
 import { BlacklistedAbilities } from '@/constants/BlacklistedAbilities';
 import { SkipTimeIntervals } from '@/constants/SkipTimeIntervals';
@@ -253,9 +254,9 @@ export default defineComponent({
         },
 
         // TODO: run this again with only the blacklisted abilities, but cut everything by 50 (to account for damage gained by the vers buff)%
-        async storeTopDamagersForInterval(start: number, end: number, storage: Array<DamagerInterval>): Promise<any> {
+        async storeTopDamagersForInterval(interval: TimeRangeMiliseconds, storage: Array<DamagerInterval>): Promise<any> {
             const abilityBlacklist = `ability.id NOT IN (${this.ignoreSpellIds.join(', ')})`;
-            return WarcraftLogsDamageDoneService.get(this.reportId, start, end, this.bossOnly, abilityBlacklist)
+            return WarcraftLogsDamageDoneService.get(this.reportId, interval.start, interval.end, this.bossOnly, abilityBlacklist)
             .then((response: WarcraftLogsDamageDoneResponse) => {
                 const sortedPlayers = response.data.entries.sort((a, b) => {
                     if (a.icon == 'Evoker-Augmentation') {
@@ -269,8 +270,8 @@ export default defineComponent({
                 });
 
                 let damagersByTime:DamagerInterval = {
-                    start: (start - this.fight!.start_time) / 1000,
-                    end: (end - this.fight!.start_time) / 1000,
+                    start: (interval.start - this.fight!.start_time) / 1000,
+                    end: (interval.end - this.fight!.start_time) / 1000,
                     damagers: sortedPlayers.slice(0, 4).map(player => {
                         return {
                             name: player.name,
@@ -431,8 +432,8 @@ export default defineComponent({
             this.mrtNote = mrtLines.join('\n');
         },
 
-        generateEbonMightTimings(): Array<[number, number]> {
-            let timings: Array<[number, number]> = [];
+        generateEbonMightTimings(): TimeRangeMiliseconds[] {
+            let timings: TimeRangeMiliseconds[] = [];
 
             const fightStartTime = this.fight!.start_time;
             const fightEndTime = this.fight!.end_time;
@@ -442,8 +443,10 @@ export default defineComponent({
             while (start < (fightEndTime - fightStartTime) / 1000) {
                 const startTimestamp = fightStartTime + (start * 1000);
                 const endTimestamp = Math.min(fightEndTime, fightStartTime + (end * 1000));
-
-                timings.push([startTimestamp, endTimestamp]);
+                timings.push({
+                    start: startTimestamp,
+                    end: endTimestamp
+                });
 
                 start = end
                 end += this.timeInterval;
@@ -480,21 +483,21 @@ export default defineComponent({
             this.topDamagersByTime = [];
             let damageDoneRequests: Promise<any>[] = [];
 
-            let ebonMightTimings: Array<[number, number]> = [];
+            let ebonMightTimings: TimeRangeMiliseconds[] = [];
 
             if (this.advancedEbonMightTimings) {
                 ebonMightTimings = this.ebonMightCasts.map((interval) => {
-                    return [
-                        this.fight!.start_time + (interval.start * 1000),
-                        this.fight!.start_time + (interval.end * 1000)
-                    ];
+                    return {
+                        start: this.fight!.start_time + (interval.start * 1000),
+                        end: this.fight!.start_time + (interval.end * 1000)
+                    };
                 });
             } else {
                 ebonMightTimings = this.generateEbonMightTimings();
             }
 
             ebonMightTimings.forEach((interval) => {
-                damageDoneRequests.push(this.storeTopDamagersForInterval(interval[0], interval[1], this.topDamagersByTime));
+                damageDoneRequests.push(this.storeTopDamagersForInterval(interval, this.topDamagersByTime));
             });
 
             Promise.all(damageDoneRequests).then(results => {
