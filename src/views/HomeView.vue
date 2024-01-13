@@ -369,7 +369,7 @@ export default defineComponent({
 
             let finalTargets = this.topDamagersByTime.map((interval: DamagerInterval) => {
                 return {
-                    damager: interval.damagers[3],
+                    damager: interval.damagers.slice(-1)[0],
                     start: interval.start,
                     end: interval.end,
                 };
