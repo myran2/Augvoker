@@ -27,7 +27,7 @@ span {
 <script lang="ts">
 import { type PropType, defineComponent } from "vue";
 import type FightLocalizedTimeRange from "@/types/FightLocalizedTimeRange";
-import { secondsToTime, timeToSeconds } from '@/classes/Format';
+import { secondsToTime, timeToSeconds } from '@/helpers/Format';
 import InputMask from 'primevue/inputmask';
 
 export default defineComponent({

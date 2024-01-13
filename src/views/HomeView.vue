@@ -147,7 +147,7 @@ import type FightLocalizedTimeRange from "@/types/FightLocalizedTimeRange";
 import type WarcraftLogsDamageDoneResponse from '@/types/WarcraftLogsDamageDoneResponse';
 import { BlacklistedAbilities } from '@/constants/BlacklistedAbilities';
 import { SkipTimeIntervals } from '@/constants/SkipTimeIntervals';
-import { secondsToTime, timeToSeconds, getColor, colorize, formatDamageNumber } from '@/classes/Format';
+import { secondsToTime, timeToSeconds, getColor, colorize, formatDamageNumber } from '@/helpers/Format';
 import Button from 'primevue/button';
 import Textarea from 'primevue/textarea';
 import DataTable from 'primevue/datatable';
