@@ -50,8 +50,7 @@
             Your selected Ebon Might timings will result in <strong>{{ unclaimedPresciences.length }}</strong> Presciences that will expire before you cast Ebon Might again.<br>
             The WeakAura expects you to cast Prescience on cooldown in order to accurately predict which casts will be double-duration.<br><br>
             In a future update, this service will automatically choose an optimal target.<br>
-            For now, since the impact of these casts is much lower, a random dps that is unlikely to already have Prescience will be selected.<br>
-            These casts/targets appear just before the prescGlowsEnd line in the note if you would like to manually change them.
+            For now, one of the players from the defaultTargets line will be used.<br>
         </Message>
 
         <div v-if="damagerTableValues.length > 0" class="damage-done-table">
@@ -419,13 +418,14 @@ export default defineComponent({
                 }
             })
 
+            this.unclaimedPresciences.forEach((cast: FightLocalizedTimeRange) => {
+                // mrtLines.push(`${secondsToTime(cast.start)} - ${this.getGoodColorizedPrescienceTarget(cast)}`);
+                mrtLines.push(`${secondsToTime(cast.start)} - |cffff00ffdefault_target|r`);
+            });
             mrtLines.sort((a: string, b: string) => {
                 const aTimestamp = a.split(" - ")[0];
                 const bTimestamp = b.split(" - ")[0];
                 return timeToSeconds(aTimestamp) - timeToSeconds(bTimestamp);
-            });
-            this.unclaimedPresciences.forEach((cast: FightLocalizedTimeRange) => {
-                mrtLines.push(`${secondsToTime(cast.start)} - ${this.getGoodColorizedPrescienceTarget(cast)}`);
             });
             mrtLines.unshift('prescGlowsStart');
             mrtLines.push('prescGlowsEnd\n');
@@ -508,7 +508,7 @@ export default defineComponent({
                     return a.start - b.start;
                 });
 
-                this.assignPrescienceTimes(this.topDamagersByTime, fightTimeSeconds, {
+                this.unclaimedPresciences = this.assignPrescienceTimes(this.topDamagersByTime, fightTimeSeconds, {
                     presciencePrecast: this.presciencePrecast,
                     estimatedPrescienceDurationSeconds: this.estimatedPrescienceDurationSeconds,
                     prescienceCooldownSeconds: this.prescienceCooldownSeconds,
