@@ -140,20 +140,20 @@
 import { defineComponent } from 'vue'
 import WarcraftLogsInput, { type SelectFightPayload } from '@/components/WarcraftLogsInput.vue';
 import WarcraftLogsDamageDoneService from '@/services/WarcraftLogsDamageDoneService';
-import type WarcraftLogsDamageDoneResponse from '@/types/WarcraftLogsDamageDoneResponse';
 import SkipIntervalSelector from '@/components/SkipIntervalSelector.vue';
 import EbonMightTimeSelector from '@/components/EbonMightTimeSelector.vue';
 import type WarcraftLogsFight from '@/types/WarcraftLogsFight';
 import type FightLocalizedTimeRange from "@/types/FightLocalizedTimeRange";
+import type WarcraftLogsDamageDoneResponse from '@/types/WarcraftLogsDamageDoneResponse';
+import { BlacklistedAbilities } from '@/constants/BlacklistedAbilities';
+import { SkipTimeIntervals } from '@/constants/SkipTimeIntervals';
+import { secondsToTime, timeToSeconds, getColor, colorize, formatDamageNumber } from '@/classes/Format';
 import Button from 'primevue/button';
 import Textarea from 'primevue/textarea';
 import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
 import Message from 'primevue/message';
 import InputSwitch from 'primevue/inputswitch';
-import { BlacklistedAbilities } from '@/constants/BlacklistedAbilities';
-import { SkipTimeIntervals } from '@/constants/SkipTimeIntervals';
-import { findAncestor } from 'typescript';
 
 type Damager = {
     name: string;
@@ -228,6 +228,10 @@ export default defineComponent({
         };
     },
     methods: {
+        getColor,
+        formatDamageNumber,
+        secondsToTime,
+
         wclFightSelected(payload: SelectFightPayload) {
             this.reportId = payload.reportId;
             this.fight = payload.fight;
@@ -284,85 +288,6 @@ export default defineComponent({
             });
         },
 
-        secondsToTime(seconds: number): string {
-            if (seconds === 0) {
-                return "PULL";
-            }
-
-            const min = Math.floor(seconds / 60);
-            const sec = Math.floor(seconds % 60);
-            return `${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
-        },
-
-        timeToSeconds(time: string): number {
-            if (time.includes('_')) {
-                return 0;
-            }
-
-            if (time === "PULL") {
-                return 0;
-            }
-            
-            const parts = time.split(':');
-            const min = parseInt(parts[0]);
-            const sec = parseInt(parts[1]);
-
-            return (60 * min) + sec;
-        },
-
-        formatThousands(number: number): string {
-            // If env variable LOCALE is set, use that locale for formatting.
-            return Math.round(number || 0).toLocaleString("en");
-        },
-
-        formatDamageNumber(number: number): string {
-            if (number > 1000000) {
-                return `${(number / 1000000).toFixed(2)}m`;
-            }
-            if (number > 10000) {
-                return `${Math.round(number / 1000)}k`;
-            }
-            return this.formatThousands(number);
-        },
-
-        getColor(playerClass: string): string {
-            switch(playerClass.toLowerCase()) {
-                case "deathknight":
-                    return "#C41E3A";
-                case "demonhunter":
-                    return "#A330C9";
-                case "druid":
-                    return "#FF7C0A";
-                case "evoker":
-                    return "#33937F";
-                case "hunter":
-                    return "#AAD372";
-                case "mage":
-                    return "#3FC7EB";
-                case "monk":
-                    return "#00FF98";
-                case "paladin":
-                    return "#F48CBA";
-                case "priest":
-                    return "#FFFFFF";
-                case "rogue":
-                    return "#FFF468";
-                case "shaman":
-                    return "#0070DD";
-                case "warlock":
-                    return "#8788EE";
-                case "warrior":
-                    return "#C69B6D";
-                default:
-                    return "#FFFFFF";
-            }
-        },
-
-        colorize(playerName: string, playerClass: string): string {
-            let colorString = this.getColor(playerClass).substring(1);
-            return `|cff${colorString.toLowerCase()}${playerName}|r`;
-        },
-
         getGoodColorizedPrescienceTarget(castTime: number): string {
             let targetName = this.augvokerName;
             let targetClass = 'evoker';
@@ -381,7 +306,7 @@ export default defineComponent({
                 targetName = finalTargets[0].damager.name;
                 targetClass = finalTargets[0].damager.class;
             }
-            return this.colorize(targetName, targetClass);
+            return colorize(targetName, targetClass);
         },
 
         assignPrescienceTimes() {
@@ -455,7 +380,7 @@ export default defineComponent({
             let ebonMightLines: string[] = ['|cffff00ff--- Ebon Might Reminders---|r'];
 
             this.topDamagersByTime.forEach((interval: DamagerInterval) => {
-                ebonMightLines.push(`{time:${this.secondsToTime(interval.start)}}EM - ${this.colorize(this.augvokerName, 'evoker')} {spell:404269}  `);
+                ebonMightLines.push(`{time:${secondsToTime(interval.start)}}EM - ${colorize(this.augvokerName, 'evoker')} {spell:404269}  `);
 
                 // skip really short time intervals
                 if ((interval.end - interval.start) <= 3) {
@@ -471,7 +396,7 @@ export default defineComponent({
 
                     // multiple presciences assigned at the same time
                     if (prevPrescTimestamp === damager.prescTimestamp) {
-                        mrtLine.push(this.colorize(damager.name, damager.class));
+                        mrtLine.push(colorize(damager.name, damager.class));
                         if (mrtLine.length > 2) {
                             console.warn('More than 2 presciences assigned at the same timestamp', interval);
                         }
@@ -481,8 +406,8 @@ export default defineComponent({
                             mrtLines.push(mrtLine.join(" "));
                         }
 
-                        const displayTimestamp: string = this.secondsToTime(damager.prescTimestamp);
-                        mrtLine = [`${displayTimestamp} - ${this.colorize(damager.name, damager.class)}`];
+                        const displayTimestamp: string = secondsToTime(damager.prescTimestamp);
+                        mrtLine = [`${displayTimestamp} - ${colorize(damager.name, damager.class)}`];
                     }
                     prevPrescTimestamp = damager.prescTimestamp;
                 });
@@ -495,10 +420,10 @@ export default defineComponent({
             mrtLines.sort((a: string, b: string) => {
                 const aTimestamp = a.split(" - ")[0];
                 const bTimestamp = b.split(" - ")[0];
-                return this.timeToSeconds(aTimestamp) - this.timeToSeconds(bTimestamp);
+                return timeToSeconds(aTimestamp) - timeToSeconds(bTimestamp);
             });
             this.unclaimedPresciences.forEach((cast: PrescienceCast) => {
-                mrtLines.push(`${this.secondsToTime(cast.duration.start)} - ${this.getGoodColorizedPrescienceTarget(cast.duration.start)}`);
+                mrtLines.push(`${secondsToTime(cast.duration.start)} - ${this.getGoodColorizedPrescienceTarget(cast.duration.start)}`);
             });
             mrtLines.unshift('prescGlowsStart');
             mrtLines.push('prescGlowsEnd\n');
@@ -611,7 +536,7 @@ export default defineComponent({
                 }
 
                 return {
-                    timeRange: `${this.secondsToTime(row.start)} - ${this.secondsToTime(row.end)}`,
+                    timeRange: `${secondsToTime(row.start)} - ${secondsToTime(row.end)}`,
                     player1: row.damagers[0],
                     player2: row.damagers[1],
                     player3: row.damagers[2],

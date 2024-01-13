@@ -27,6 +27,7 @@ span {
 <script lang="ts">
 import { type PropType, defineComponent } from "vue";
 import type FightLocalizedTimeRange from "@/types/FightLocalizedTimeRange";
+import { secondsToTime, timeToSeconds } from '@/classes/Format';
 import InputMask from 'primevue/inputmask';
 
 export default defineComponent({
@@ -43,29 +44,9 @@ export default defineComponent({
     endDisplay: string;
   } {
     return {
-        startDisplay: this.interval ? this.secondsToTime(this.interval.start) : "0:00",
-        endDisplay: this.interval ? this.secondsToTime(this.interval.end) : "0:00",
+        startDisplay: this.interval ? secondsToTime(this.interval.start) : "0:00",
+        endDisplay: this.interval ? secondsToTime(this.interval.end) : "0:00",
     };
-  },
-
-  methods: {
-    secondsToTime(seconds: number): string {
-        const min = Math.floor(seconds / 60);
-        const sec = seconds % 60;
-        return `${min.toString().padStart(1, '0')}:${sec.toString().padStart(2, '0')}`;
-    },
-
-    timeToSeconds(time: string): number | null {
-      if (time.includes('_')) {
-        return null;
-      }
-      
-      const parts = time.split(':');
-      const min = parseInt(parts[0]);
-      const sec = parseInt(parts[1]);
-
-      return (60 * min) + sec;
-    }
   },
   watch: {
     startDisplay: function(newDisplay: string, oldDisplay: string) {
@@ -73,7 +54,7 @@ export default defineComponent({
         return;
       }
 
-      const sec = this.timeToSeconds(this.startDisplay);
+      const sec = timeToSeconds(this.startDisplay);
       if (!sec) {
         return;
       }
@@ -86,7 +67,7 @@ export default defineComponent({
         return;
       }
       
-      const sec = this.timeToSeconds(this.endDisplay);
+      const sec = timeToSeconds(this.endDisplay);
       if (!sec) {
         return;
       }
@@ -95,8 +76,8 @@ export default defineComponent({
     },
 
     interval: function(newValue, oldValue) {
-      this.startDisplay = this.secondsToTime(this.interval!.start);
-      this.endDisplay = this.secondsToTime(this.interval!.end);
+      this.startDisplay = secondsToTime(this.interval!.start);
+      this.endDisplay = secondsToTime(this.interval!.end);
     }
   },
 });
