@@ -1,4 +1,4 @@
-import { type TimeIntervalSeconds } from '@/components/HumanReadableSeconds.vue';
+import { type TimeIntervalSeconds } from '@/components/HumanReadableTimeRange.vue';
 
 export const SkipTimeIntervals: { [encounterId: number] : TimeIntervalSeconds[]} = {
     // Scalecommander Sarkareth

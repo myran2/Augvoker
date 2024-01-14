@@ -2,7 +2,13 @@
     <div class="skip-time-intervals">
       <div class="header">
         <h2>Ebon Might Buffs</h2>
-        <Button v-if="augvokerName" size="small" label="Copy Timings From Log" :disabled="!allowEmCopy" @click="copyEbonMightTimings()"/>
+        <Button
+          v-if="augvokerName"
+          :loading="loading"
+          :disabled="!allowEmCopy"
+          @click="copyEbonMightTimings()"
+          size="small" label="Copy Timings From Log"
+        />
       </div>
         <InputGroup v-for="(ebonMightCast, index) in ebonMightTimings" class="interval">
             <Button @click="removeEbonMightCast(index)" icon="pi pi-trash" severity="danger"/>
@@ -43,7 +49,7 @@
 
 <script lang="ts">
 import { defineComponent } from "vue";
-import HumanReadableTimeRange from '@/components/HumanReadableSeconds.vue';
+import HumanReadableTimeRange from '@/components/HumanReadableTimeRange.vue';
 import WarcraftLogsBuffsService from "@/services/WarcraftLogsBuffsService";
 import type WarcraftLogsBuffsResponse from "@/types/WarcraftLogsBuffsResponse";
 import type FightLocalizedTimeRange from "@/types/FightLocalizedTimeRange";
@@ -73,10 +79,12 @@ export default defineComponent({
     endTimestamp: Number,
   },
   data() : {
-    ebonMightTimings: Array<FightLocalizedTimeRange>
+    ebonMightTimings: Array<FightLocalizedTimeRange>,
+    loading: boolean,
   } {
     return {
-      ebonMightTimings: []
+      ebonMightTimings: [],
+      loading: false,
     };
   },
   methods: {
@@ -109,8 +117,11 @@ export default defineComponent({
         return;
       }
 
+      this.loading = true;
+
       WarcraftLogsBuffsService.get(this.reportId!, this.startTimestamp!, this.endTimestamp!, 395296)
             .then((response: WarcraftLogsBuffsResponse) => {
+              this.loading = false;
               const selectedAugBuffs = response.data.auras.find(obj => { return obj.name === this.augvokerName; });
               if (! selectedAugBuffs) {
                 return;

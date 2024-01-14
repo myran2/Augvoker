@@ -322,14 +322,14 @@ export default defineComponent({
             let possiblePrescienceCasts: PrescienceCast[] = [
                 {
                     duration: {
-                        start: 0,
+                        start: 1,
                         end: config.estimatedPrescienceDurationSeconds * (config.presciencePrecast ? 2 : 1),
                     },
                     claimed: false,
                 }
             ];
 
-            let prescTimestamp: number = 0;
+            let prescTimestamp: number = 2;
             let prescCastCount: number = config.presciencePrecast ? 3 : 1;
             while (prescTimestamp < fightEndSeconds) {
                 prescCastCount++;
@@ -376,11 +376,31 @@ export default defineComponent({
             });
         },
 
+        // just grabs the 3 most common names in the topDamagers table.
+        makeDefaultTargetsLine(): string {
+            const nameCounts = new Map();
+            this.topDamagersByTime.map((interval: DamagerInterval) => {
+                return interval.damagers.forEach((damager: Damager) => {
+                    const colorizedName = colorize(damager.name, damager.class);
+                    nameCounts.set(colorizedName, (nameCounts.get(colorizedName) || 0) + 1);
+                })
+            });
+
+            const sortedNames = [...nameCounts.entries()].sort((a, b) => b[1] - a[1]);
+            return `defaultTargets - ${sortedNames.slice(0, 3).map((entry) => entry[0]).join(' ')}`;
+        },
+
         makeMrtNote() {
             let mrtLines: string[] = [];
             let ebonMightLines: string[] = ['|cffff00ff--- Ebon Might Reminders---|r'];
 
-            this.topDamagersByTime.forEach((interval: DamagerInterval) => {
+            const onPullDamagers = this.topDamagersByTime[0].damagers.slice(0,2)
+            .map((damager: Damager) => {
+                return colorize(damager.name, damager.class);
+            }).join(' ')
+            mrtLines.push(`PULL - ${onPullDamagers}`);
+
+            this.topDamagersByTime.slice(1).forEach((interval: DamagerInterval) => {
                 ebonMightLines.push(`{time:${secondsToTime(interval.start)}}EM - ${colorize(this.augvokerName, 'evoker')} {spell:404269}  `);
 
                 // skip really short time intervals
@@ -396,7 +416,7 @@ export default defineComponent({
                     }
 
                     // multiple presciences assigned at the same time
-                    if (prevPrescTimestamp === damager.prescTimestamp) {
+                    if (Math.abs(prevPrescTimestamp - damager.prescTimestamp) <= 3) {
                         mrtLine.push(colorize(damager.name, damager.class));
                         if (mrtLine.length > 2) {
                             console.warn('More than 2 presciences assigned at the same timestamp', interval);
@@ -427,6 +447,7 @@ export default defineComponent({
                 const bTimestamp = b.split(" - ")[0];
                 return timeToSeconds(aTimestamp) - timeToSeconds(bTimestamp);
             });
+            mrtLines.unshift(this.makeDefaultTargetsLine());
             mrtLines.unshift('prescGlowsStart');
             mrtLines.push('prescGlowsEnd\n');
             mrtLines.push(ebonMightLines.join('\n'));

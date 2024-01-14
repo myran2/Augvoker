@@ -47,7 +47,7 @@
 
 <script lang="ts">
 import { type PropType, defineComponent } from "vue";
-import HumanReadableTimeRange from '@/components/HumanReadableSeconds.vue';
+import HumanReadableTimeRange from '@/components/HumanReadableTimeRange.vue';
 import type FightLocalizedTimeRange from "@/types/FightLocalizedTimeRange";
 import Button from 'primevue/button';
 import InputNumber from 'primevue/inputnumber';

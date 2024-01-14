@@ -44,8 +44,8 @@ export default defineComponent({
     endDisplay: string;
   } {
     return {
-        startDisplay: this.interval ? secondsToTime(this.interval.start) : "0:00",
-        endDisplay: this.interval ? secondsToTime(this.interval.end) : "0:00",
+        startDisplay: this.interval ? secondsToTime(this.interval.start, 1) : "0:00",
+        endDisplay: this.interval ? secondsToTime(this.interval.end, 1) : "0:00",
     };
   },
   watch: {
