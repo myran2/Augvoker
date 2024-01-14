@@ -60,9 +60,8 @@
 
         <Message v-if="unclaimedPresciences.length > 0" severity="warn">
             Your selected Ebon Might timings will result in <strong>{{ unclaimedPresciences.length }}</strong> Presciences that will expire before you cast Ebon Might again.<br>
-            The WeakAura expects you to cast Prescience on cooldown in order to accurately predict which casts will be double-duration.<br><br>
             In a future update, this service will automatically choose an optimal target.<br>
-            For now, one of the players from the defaultTargets line will be used.<br>
+            For now, one of the players from the <span style="font-family: monospace; font-weight: bold;">defaultTargets</span> line will be used.<br>
         </Message>
 
         <div v-if="damagerTableValues.length > 0" class="damage-done-table">
