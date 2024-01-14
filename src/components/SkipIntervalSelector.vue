@@ -2,7 +2,7 @@
   <div class="skip-time-intervals">
     <div class="columns">
       <div style="min-width: 578px">
-        <h2>Skip Time Intervals</h2>
+        <h2>Forced Downtime</h2>
         <InputGroup v-for="(interval, index) in skipTimeIntervals" class="interval">
           <Button @click="removeInterval(index)" icon="pi pi-trash" severity="danger"/>
           <HumanReadableTimeRange :interval="interval" />

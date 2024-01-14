@@ -335,6 +335,7 @@ export default defineComponent({
 
         assignPrescienceTimes(
             topDamagersByTime: DamagerInterval[],
+            skipTimeIntervals: FightLocalizedTimeRange[],
             fightEndSeconds: number,
             config: {
                 presciencePrecast: boolean,
@@ -356,8 +357,27 @@ export default defineComponent({
             let prescTimestamp: number = 2;
             let prescCastCount: number = config.presciencePrecast ? 3 : 1;
             while (prescTimestamp < fightEndSeconds) {
-                prescCastCount++;
+                skipTimeIntervals.forEach((interval: FightLocalizedTimeRange) => {
+                    // presc cast takes place during a skipped interval (forced downtime)
+                    if (prescTimestamp > interval.start && prescTimestamp < interval.end) {
+                        let timeDiffSeconds: number = interval.end - prescTimestamp;
+                        prescTimestamp = interval.end;
 
+                        // we gained a prescience charge during the downtime
+                        if (timeDiffSeconds >= config.prescienceCooldownSeconds) {
+                            prescCastCount++;
+                            possiblePrescienceCasts.push({
+                                duration: {
+                                    start: prescTimestamp,
+                                    end: prescTimestamp + (config.estimatedPrescienceDurationSeconds * (prescCastCount % 3 === 0 ? 2 : 1))
+                                },
+                                claimed: false
+                            });
+                        }
+                    }
+                })
+
+                prescCastCount++;
                 possiblePrescienceCasts.push({
                     duration: {
                         start: prescTimestamp,
@@ -553,7 +573,7 @@ export default defineComponent({
                     return a.start - b.start;
                 });
 
-                this.unclaimedPresciences = this.assignPrescienceTimes(this.topDamagersByTime, fightTimeSeconds, {
+                this.unclaimedPresciences = this.assignPrescienceTimes(this.topDamagersByTime, this.skipTimeIntervals, fightTimeSeconds, {
                     presciencePrecast: this.presciencePrecast,
                     estimatedPrescienceDurationSeconds: this.estimatedPrescienceDurationSeconds,
                     prescienceCooldownSeconds: this.prescienceCooldownSeconds,
