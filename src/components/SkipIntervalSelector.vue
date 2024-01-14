@@ -9,18 +9,6 @@
         </InputGroup>
         <Button id="add-interval" size="small" label="Add" severity="secondary" outlined @click="addInterval()"/>
       </div>
-      <div>
-        <h2>Ebon Might Interval Duration</h2>
-        <InputGroup>
-          <InputNumber
-            v-model="ebonMightDuration"
-            :step="1"
-            :min="15"
-            :max="45"
-          ></InputNumber>
-          <InputGroupAddon>Seconds</InputGroupAddon>
-        </InputGroup>
-      </div>
     </div>
   </div>
 </template>
@@ -50,35 +38,18 @@ import { type PropType, defineComponent } from "vue";
 import HumanReadableTimeRange from '@/components/HumanReadableTimeRange.vue';
 import type FightLocalizedTimeRange from "@/types/FightLocalizedTimeRange";
 import Button from 'primevue/button';
-import InputNumber from 'primevue/inputnumber';
 import InputGroup from 'primevue/inputgroup';
-import InputGroupAddon from 'primevue/inputgroupaddon';
 
 export default defineComponent({
   name: "SkipIntervalSelector",
-  emits: {
-    updateTimeInterval(payload: number) {
-        return payload;
-    },
-  },
   components: {
     HumanReadableTimeRange,
     Button,
-    InputNumber,
     InputGroup,
-    InputGroupAddon
   },
   props: {
     durationSeconds: Number,
     skipTimeIntervals: Array as PropType<FightLocalizedTimeRange[]>,
-    timeInterval: Number,
-  },
-  data() : {
-    ebonMightDuration: number,
-  } {
-    return {
-      ebonMightDuration: this.timeInterval ?? 30
-    };
   },
   methods: {
     addInterval() {
@@ -93,11 +64,6 @@ export default defineComponent({
 
     removeInterval(index: number) {
       this.skipTimeIntervals?.splice(index, 1);
-    }
-  },
-  watch: {
-    ebonMightDuration(newDuration: number, oldDuration: number) {
-      this.$emit("updateTimeInterval", newDuration);
     }
   }
 });

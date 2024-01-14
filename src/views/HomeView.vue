@@ -20,12 +20,24 @@
                 @ebonMightTimingsChanged="onEbonMightTimingsUpdated"
             />
 
-            <SkipIntervalSelector v-else
-                :durationSeconds="fight.end_time - fight.start_time" 
-                :skipTimeIntervals="skipTimeIntervals"
-                :timeInterval="timeInterval"
-                @updateTimeInterval="onTimeIntervalUpdate"
-            />
+            <div class="columns">
+                <SkipIntervalSelector
+                    :durationSeconds="fight.end_time - fight.start_time" 
+                    :skipTimeIntervals="skipTimeIntervals"
+                />
+                <div v-if="!advancedEbonMightTimings">
+                    <h2>Ebon Might Interval Duration</h2>
+                    <InputGroup>
+                    <InputNumber
+                        v-model="ebonMightDurationSeconds"
+                        :step="1"
+                        :min="15"
+                        :max="45"
+                    ></InputNumber>
+                    <InputGroupAddon>Seconds</InputGroupAddon>
+                    </InputGroup>
+                </div>
+            </div>
 
             <div>
                 <Button
@@ -115,6 +127,12 @@
         padding-bottom: 15px;
     }
 
+    .columns {
+        display: flex;
+        flex-flow: row nowrap;
+        column-gap: 50px;
+    }
+
     .mrt-note {
         padding-top: 3%;
         textarea {
@@ -154,6 +172,9 @@ import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
 import Message from 'primevue/message';
 import InputSwitch from 'primevue/inputswitch';
+import InputNumber from 'primevue/inputnumber';
+import InputGroup from 'primevue/inputgroup';
+import InputGroupAddon from 'primevue/inputgroupaddon';
 
 type Damager = {
     name: string;
@@ -185,13 +206,16 @@ export default defineComponent({
         Column,
         Message,
         InputSwitch,
+        InputGroup,
+        InputGroupAddon,
+        InputNumber,
     },
     data() : {
         reportId: string,
         fight: WarcraftLogsFight | null
         bossOnly: boolean,
         advancedEbonMightTimings: boolean,
-        timeInterval: number,
+        ebonMightDurationSeconds: number,
         skipTimeIntervals: FightLocalizedTimeRange[],
         ebonMightCasts: FightLocalizedTimeRange[],
         topDamagersByTime: Array<DamagerInterval>,
@@ -211,7 +235,7 @@ export default defineComponent({
             'fight': null,
             'bossOnly': true,
             'advancedEbonMightTimings': false,
-            timeInterval: 27,
+            ebonMightDurationSeconds: 27,
             skipTimeIntervals: [],
             ebonMightCasts: [],
             topDamagersByTime: [],
@@ -461,7 +485,7 @@ export default defineComponent({
             const fightEndTime = this.fight!.end_time;
 
             let start = 5;
-            let end = start + this.timeInterval;
+            let end = start + this.ebonMightDurationSeconds;
             while (start < (fightEndTime - fightStartTime) / 1000) {
                 const startTimestamp = fightStartTime + (start * 1000);
                 const endTimestamp = Math.min(fightEndTime, fightStartTime + (end * 1000));
@@ -471,7 +495,7 @@ export default defineComponent({
                 });
 
                 start = end
-                end += this.timeInterval;
+                end += this.ebonMightDurationSeconds;
 
                 this.skipTimeIntervals.forEach(interval => {
                     if (interval.start === interval.end) {
@@ -482,7 +506,7 @@ export default defineComponent({
                     // change start to end of skipped interval
                     if (interval.start <= start && start <= interval.end) {
                         start = interval.end;
-                        end = start + this.timeInterval;
+                        end = start + this.ebonMightDurationSeconds;
                     }
 
                     // current interval ends inside of a skipped interval:
@@ -538,10 +562,6 @@ export default defineComponent({
 
                 this.loading = false;
             });
-        },
-
-        onTimeIntervalUpdate(payload: number) {
-            this.timeInterval = payload;
         },
 
         onEbonMightTimingsUpdated(payload: FightLocalizedTimeRange[]) {
