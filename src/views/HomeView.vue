@@ -51,12 +51,11 @@
             </div>
         </template>
 
-        <div class="mrt-note" v-if="mrtNote">
-            <h2>MRT Note</h2>
-            <span>Intended for use with <a target="_blank" href="https://wago.io/yrmx6ZQSG">this WeakAura</a>.</span><br>
-            <span>Ebon Might Reminders are formatted for use with <a target="_blank" href="https://wago.io/n7l5uN3YM">Kaze's MRT WeakAura.</a></span>
-            <Textarea v-model="mrtNote" readonly cols="5"/>
-        </div>
+        <MrtNote
+            :top-damagers-by-time="topDamagersByTime"
+            :augvoker-name="augvokerName"
+            :unclaimed-presciences="unclaimedPresciences"
+        />
 
         <Message v-if="unclaimedPresciences.length > 0" severity="warn">
             Your selected Ebon Might timings will result in <strong>{{ unclaimedPresciences.length }}</strong> Presciences that will expire before you cast Ebon Might again.<br>
@@ -132,15 +131,6 @@
         column-gap: 50px;
     }
 
-    .mrt-note {
-        padding-top: 3%;
-        textarea {
-            width: 100%;
-            height: 150px;
-            resize: vertical;
-        }
-    }
-
     .damage-done-table {
         padding-top: 3%;
     }
@@ -158,15 +148,17 @@ import WarcraftLogsInput, { type SelectFightPayload } from '@/components/Warcraf
 import WarcraftLogsDamageDoneService from '@/services/WarcraftLogsDamageDoneService';
 import SkipIntervalSelector from '@/components/SkipIntervalSelector.vue';
 import EbonMightTimeSelector from '@/components/EbonMightTimeSelector.vue';
+import MrtNote from '@/components/MrtNote.vue';
 import type WarcraftLogsFight from '@/types/WarcraftLogsFight';
 import type FightLocalizedTimeRange from "@/types/FightLocalizedTimeRange";
 import type TimeRangeMiliseconds from "@/types/TimeRangeMiliseconds";
 import type WarcraftLogsDamageDoneResponse from '@/types/WarcraftLogsDamageDoneResponse';
+import type { Damager } from '@/types/Damager';
+import type { DamagerInterval } from '@/types/DamagerInterval';
 import { BlacklistedAbilities } from '@/constants/BlacklistedAbilities';
 import { SkipTimeIntervals } from '@/constants/SkipTimeIntervals';
 import { secondsToTime, timeToSeconds, getColor, colorize, formatDamageNumber } from '@/helpers/Format';
 import Button from 'primevue/button';
-import Textarea from 'primevue/textarea';
 import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
 import Message from 'primevue/message';
@@ -174,19 +166,6 @@ import InputSwitch from 'primevue/inputswitch';
 import InputNumber from 'primevue/inputnumber';
 import InputGroup from 'primevue/inputgroup';
 import InputGroupAddon from 'primevue/inputgroupaddon';
-
-type Damager = {
-    name: string;
-    damage: number;
-    class: string;
-    prescTimestamp: number|null;
-}
-
-type DamagerInterval = {
-    start: number;
-    end: number;
-    damagers: Damager[];
-}
 
 type PrescienceCast = {
     duration: FightLocalizedTimeRange,
@@ -199,8 +178,8 @@ export default defineComponent({
         WarcraftLogsInput,
         SkipIntervalSelector,
         EbonMightTimeSelector,
+        MrtNote,
         Button,
-        Textarea,
         DataTable,
         Column,
         Message,
@@ -419,84 +398,6 @@ export default defineComponent({
             });
         },
 
-        // just grabs the 3 most common names in the topDamagers table.
-        makeDefaultTargetsLine(): string {
-            const nameCounts = new Map();
-            this.topDamagersByTime.map((interval: DamagerInterval) => {
-                return interval.damagers.forEach((damager: Damager) => {
-                    const colorizedName = colorize(damager.name, damager.class);
-                    nameCounts.set(colorizedName, (nameCounts.get(colorizedName) || 0) + 1);
-                })
-            });
-
-            const sortedNames = [...nameCounts.entries()].sort((a, b) => b[1] - a[1]);
-            return `defaultTargets - ${sortedNames.slice(0, 3).map((entry) => entry[0]).join(' ')}`;
-        },
-
-        makeMrtNote() {
-            let mrtLines: string[] = [];
-            let ebonMightLines: string[] = ['|cffff00ff--- Ebon Might Reminders---|r'];
-
-            const onPullDamagers = this.topDamagersByTime[0].damagers.slice(0,2)
-            .map((damager: Damager) => {
-                return colorize(damager.name, damager.class);
-            }).join(' ')
-            mrtLines.push(`PULL - ${onPullDamagers}`);
-
-            this.topDamagersByTime.slice(1).forEach((interval: DamagerInterval) => {
-                ebonMightLines.push(`{time:${secondsToTime(interval.start)}}EM - ${colorize(this.augvokerName, 'evoker')} {spell:404269}  `);
-
-                // skip really short time intervals
-                if ((interval.end - interval.start) <= 3) {
-                    return;
-                }
-
-                let mrtLine: string[] = [];
-                let prevPrescTimestamp: number = -1;
-                interval.damagers.forEach((damager: Damager) => {
-                    if (damager.prescTimestamp === null) {
-                        return;
-                    }
-
-                    // multiple presciences assigned at the same time
-                    if (Math.abs(prevPrescTimestamp - damager.prescTimestamp) <= 3) {
-                        mrtLine.push(colorize(damager.name, damager.class));
-                        if (mrtLine.length > 2) {
-                            console.warn('More than 2 presciences assigned at the same timestamp', interval);
-                        }
-                    } else {
-                        if (mrtLine.length) {
-                            // write previous line now that we're done with it
-                            mrtLines.push(mrtLine.join(" "));
-                        }
-
-                        const displayTimestamp: string = secondsToTime(damager.prescTimestamp);
-                        mrtLine = [`${displayTimestamp} - ${colorize(damager.name, damager.class)}`];
-                    }
-                    prevPrescTimestamp = damager.prescTimestamp;
-                });
-                // flush any remaining lines
-                if (mrtLine.length) {
-                    mrtLines.push(mrtLine.join(" "));
-                }
-            })
-
-            this.unclaimedPresciences.forEach((cast: FightLocalizedTimeRange) => {
-                // mrtLines.push(`${secondsToTime(cast.start)} - ${this.getGoodColorizedPrescienceTarget(cast)}`);
-                mrtLines.push(`${secondsToTime(cast.start)} - |cffff00ffdefault_target|r`);
-            });
-            mrtLines.sort((a: string, b: string) => {
-                const aTimestamp = a.split(" - ")[0];
-                const bTimestamp = b.split(" - ")[0];
-                return timeToSeconds(aTimestamp) - timeToSeconds(bTimestamp);
-            });
-            mrtLines.unshift(this.makeDefaultTargetsLine());
-            mrtLines.unshift('prescGlowsStart');
-            mrtLines.push('prescGlowsEnd\n');
-            mrtLines.push(ebonMightLines.join('\n'));
-            this.mrtNote = mrtLines.join('\n');
-        },
-
         generateEbonMightTimings(): TimeRangeMiliseconds[] {
             let timings: TimeRangeMiliseconds[] = [];
 
@@ -577,7 +478,6 @@ export default defineComponent({
                     estimatedPrescienceDurationSeconds: this.estimatedPrescienceDurationSeconds,
                     prescienceCooldownSeconds: this.prescienceCooldownSeconds,
                 });
-                this.makeMrtNote();
 
                 this.loading = false;
             });
@@ -593,8 +493,6 @@ export default defineComponent({
             if (this.loading || !this.topDamagersByTime.length) {
                 return;
             }
-
-            this.makeMrtNote();
         },
     },
 
