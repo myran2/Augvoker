@@ -9,7 +9,6 @@
   
 <style scoped>
 .mrt-note {
-    padding-top: 3%;
     textarea {
         width: 100%;
         height: 150px;
