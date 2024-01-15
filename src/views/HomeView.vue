@@ -237,27 +237,6 @@ export default defineComponent({
             });
         },
 
-        getGoodColorizedPrescienceTarget(prescienceCast: FightLocalizedTimeRange): string {
-            let targetName = this.augvokerName;
-            let targetClass = 'evoker';
-
-            let finalTargets = this.topDamagersByTime.map((interval: DamagerInterval) => {
-                return {
-                    damager: interval.damagers.slice(-1)[0],
-                    start: interval.start,
-                    end: interval.end,
-                };
-            }).filter((target) => {
-                return target.start < prescienceCast.start && target.end > prescienceCast.start;
-            });
-
-            if (finalTargets.length) {
-                targetName = finalTargets[0].damager.name;
-                targetClass = finalTargets[0].damager.class;
-            }
-            return colorize(targetName, targetClass);
-        },
-
         assignPrescienceTimes(
             topDamagersByTime: DamagerInterval[],
             skipTimeIntervals: FightLocalizedTimeRange[],

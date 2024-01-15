@@ -111,7 +111,6 @@ computed: {
         })
 
         this.unclaimedPresciences.forEach((cast: FightLocalizedTimeRange) => {
-            // mrtLines.push(`${secondsToTime(cast.start)} - ${this.getGoodColorizedPrescienceTarget(cast)}`);
             mrtLines.push(`${secondsToTime(cast.start)} - |cffff00ffdefault_target|r`);
         });
         mrtLines.sort((a: string, b: string) => {
@@ -119,7 +118,7 @@ computed: {
             const bTimestamp = b.split(" - ")[0];
             return timeToSeconds(aTimestamp) - timeToSeconds(bTimestamp);
         });
-        mrtLines.unshift(`defaultTargets - ${this.getDefaultTargets(3).join(' ')}`);
+        mrtLines.unshift(`defaultTargets - ${this.getDefaultTargets(4).join(' ')}`);
         mrtLines.unshift('prescGlowsStart');
         mrtLines.push('prescGlowsEnd\n');
         mrtLines.push(ebonMightLines.join('\n'));
