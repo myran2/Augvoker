@@ -80,11 +80,9 @@ methods: {
 },
 computed: {
     damagerTableValues() {
-        return this.topDamagersByTime.map((row: DamagerInterval) => {
-            if (row.damagers.length < 4) {
-                return null;
-            }
-
+        return this.topDamagersByTime.filter((row: DamagerInterval) => {
+            return row.damagers.length === 4;
+        }).map((row: DamagerInterval) => {
             return {
                 timeRange: `${secondsToTime(row.start)} - ${secondsToTime(row.end)}`,
                 player1: row.damagers[0],

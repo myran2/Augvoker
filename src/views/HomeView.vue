@@ -391,6 +391,16 @@ export default defineComponent({
             }
 
             ebonMightTimings.forEach((interval) => {
+                // interval starts after the fight ends - skip
+                if (interval.start > this.fight!.end_time) {
+                    return;
+                }
+                // interval ends after the fight ends - clamp end to fight end
+                if (interval.end > this.fight!.end_time) {
+                    damageDoneRequests.push(this.storeTopDamagersForInterval({start: interval.start, end: this.fight!.end_time}, this.topDamagersByTime));
+                    return;
+                }
+
                 damageDoneRequests.push(this.storeTopDamagersForInterval(interval, this.topDamagersByTime));
             });
 
