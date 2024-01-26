@@ -1,6 +1,6 @@
-import { type TimeIntervalSeconds } from '@/components/HumanReadableTimeRange.vue';
+import type FightLocalizedTimeRange from "@/types/FightLocalizedTimeRange";
 
-export const SkipTimeIntervals: { [encounterId: number] : TimeIntervalSeconds[]} = {
+export const SkipTimeIntervals: { [encounterId: number] : FightLocalizedTimeRange[]} = {
     // Scalecommander Sarkareth
     2685: [
         // P1 -> P2 intermission
