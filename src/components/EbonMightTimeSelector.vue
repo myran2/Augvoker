@@ -119,7 +119,8 @@ export default defineComponent({
 
       this.loading = true;
 
-      WarcraftLogsBuffsService.get(this.reportId!, this.startTimestamp!, this.endTimestamp!, 395296)
+      const segment = {start: this.startTimestamp!, end: this.endTimestamp!}
+      WarcraftLogsBuffsService.get(this.reportId!, segment, 395296)
             .then((response: WarcraftLogsBuffsResponse) => {
               this.loading = false;
               const selectedAugBuffs = response.data.auras.find(obj => { return obj.name === this.augvokerName; });

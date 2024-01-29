@@ -28,13 +28,25 @@
             </Dropdown>
 
             <div class="right-group">
-                <div class="boss-only-toggle">
-                    <Checkbox v-model="bossOnly" :binary="true" />
-                    <label for="bossOnly">Only Include Damage Done to Bosses</label>
+                <div>
+                    <label for="damageTarget">Include Damage Done to:</label>
+                    <Dropdown
+                        id="damageTarget"
+                        v-model="damageTarget"
+                        :options="damageTargetOptions"
+                    >
+                    </Dropdown>
                 </div>
                 <div>
-                    <label for="selectedAugvoker" style="padding-right: 5px">Augvoker Name</label>
-                    <Dropdown id="selectedAugvoker" v-model="selectedAugvoker" :options="fightAugvokers" :loading="fightsLoading" placeholder="Augvoker Name" editable>
+                    <label for="selectedAugvoker">Augvoker Name:</label>
+                    <Dropdown
+                        id="selectedAugvoker"
+                        v-model="selectedAugvoker"
+                        :options="fightAugvokers"
+                        :loading="fightsLoading"
+                        placeholder="Augvoker Name"
+                        editable
+                    >
                     </Dropdown>
                 </div>
             </div>
@@ -61,16 +73,9 @@
             flex-flow: column nowrap;
             row-gap: 10px;
             align-items: flex-end;
-        }
-    }
-
-    .boss-only-toggle {
-        display: flex;
-        flex-flow: row nowrap;
-        justify-content: center;
-
-        label {
-            padding-left: 5px;
+            label {
+                padding-right: 5px
+            }
         }
     }
 }
@@ -81,6 +86,7 @@ import { defineComponent } from "vue";
 import WarcraftLogsReportService from "@/services/WarcraftLogsReportService";
 import type WarcraftLogsReportResponse from "@/types/WarcraftLogsReportResponse";
 import type WarcraftLogsFight from "@/types/WarcraftLogsFight";
+import DamageTargetOptions from "@/types/DamageTargetOptions";
 import Dropdown from 'primevue/dropdown';
 import InputText from 'primevue/inputtext';
 import Message from 'primevue/message';
@@ -89,7 +95,7 @@ import Checkbox from 'primevue/checkbox';
 export interface SelectFightPayload {
     'reportId': string;
     'fight': WarcraftLogsFight;
-    'bossOnly': boolean;
+    'damageTarget': DamageTargetOptions;
 }
 
 export default defineComponent({
@@ -115,7 +121,7 @@ export default defineComponent({
     fights: WarcraftLogsFight[],
     reportId: string,
     selectedFight: WarcraftLogsFight | null,
-    bossOnly: boolean,
+    damageTarget: DamageTargetOptions,
     fightsLoading: boolean,
     selectedAugvoker: string,
     fightAugvokers: string[],
@@ -127,11 +133,16 @@ export default defineComponent({
         fights: [] as WarcraftLogsFight[],
         reportId: "",
         selectedFight: null,
-        bossOnly: true,
+        damageTarget: DamageTargetOptions.BossOnly,
         fightsLoading: false,
         selectedAugvoker: "",
         fightAugvokers: [],
     };
+  },
+  computed: {
+    damageTargetOptions() {
+        return Object.values(DamageTargetOptions);
+    }
   },
   methods: {
     processUrl(): boolean {
@@ -220,7 +231,7 @@ export default defineComponent({
         this.$emit("selectFight", {
             'reportId': this.reportId,
             'fight': this.selectedFight,
-            'bossOnly': this.bossOnly,
+            'damageTarget': this.damageTarget,
         });
     },
 
@@ -232,7 +243,7 @@ export default defineComponent({
         this.$emit("selectFight", {
             'reportId': this.reportId,
             'fight': this.selectedFight,
-            'bossOnly': this.bossOnly,
+            'damageTarget': this.damageTarget,
         });
     },
 

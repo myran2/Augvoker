@@ -95,6 +95,7 @@
 import { defineComponent } from 'vue'
 import WarcraftLogsInput, { type SelectFightPayload } from '@/components/WarcraftLogsInput.vue';
 import WarcraftLogsDamageDoneService from '@/services/WarcraftLogsDamageDoneService';
+import BossSettingsService from '@/services/BossSettingsService';
 import SkipIntervalSelector from '@/components/SkipIntervalSelector.vue';
 import EbonMightTimeSelector from '@/components/EbonMightTimeSelector.vue';
 import MrtNote from '@/components/MrtNote.vue';
@@ -105,9 +106,9 @@ import type TimeRangeMiliseconds from "@/types/TimeRangeMiliseconds";
 import type WarcraftLogsDamageDoneResponse from '@/types/WarcraftLogsDamageDoneResponse';
 import type { Damager } from '@/types/Damager';
 import type { DamagerInterval } from '@/types/DamagerInterval';
+import DamageTargetOptions from "@/types/DamageTargetOptions";
 import { BlacklistedAbilities } from '@/constants/BlacklistedAbilities';
-import { SkipTimeIntervals } from '@/constants/SkipTimeIntervals';
-import { secondsToTime, getColor, colorize, formatDamageNumber } from '@/helpers/Format';
+import { secondsToTime, getColor, formatDamageNumber } from '@/helpers/Format';
 import Button from 'primevue/button';
 import Message from 'primevue/message';
 import InputSwitch from 'primevue/inputswitch';
@@ -138,7 +139,7 @@ export default defineComponent({
     data() : {
         reportId: string,
         fight: WarcraftLogsFight | null
-        bossOnly: boolean,
+        damageTarget: DamageTargetOptions,
         advancedEbonMightTimings: boolean,
         ebonMightDurationSeconds: number,
         skipTimeIntervals: FightLocalizedTimeRange[],
@@ -146,7 +147,6 @@ export default defineComponent({
         topDamagersByTime: Array<DamagerInterval>,
         unclaimedPresciences: Array<FightLocalizedTimeRange>
         tableValues: Array<Object>,
-        ignoreSpellIds: number[],
         loading: boolean,
         mrtNote: string,
         damagersPerEbonMight: number,
@@ -156,10 +156,10 @@ export default defineComponent({
         presciencePrecast: boolean,
     } {
         return {
-            'reportId': '',
-            'fight': null,
-            'bossOnly': true,
-            'advancedEbonMightTimings': false,
+            reportId: '',
+            fight: null,
+            damageTarget: DamageTargetOptions.BossOnly,
+            advancedEbonMightTimings: false,
             ebonMightDurationSeconds: 27,
             skipTimeIntervals: [],
             ebonMightCasts: [],
@@ -168,7 +168,6 @@ export default defineComponent({
             tableValues: [],
             loading: false,
             mrtNote: "",
-            ignoreSpellIds: BlacklistedAbilities,
             damagersPerEbonMight: 3,
             prescienceCooldownSeconds: 11,
             estimatedPrescienceDurationSeconds: 22,
@@ -184,7 +183,7 @@ export default defineComponent({
         wclFightSelected(payload: SelectFightPayload) {
             this.reportId = payload.reportId;
             this.fight = payload.fight;
-            this.bossOnly = payload.bossOnly;
+            this.damageTarget = payload.damageTarget;
             this.skipTimeIntervals = [];
             this.mrtNote = "";
             this.tableValues = [];
@@ -193,7 +192,7 @@ export default defineComponent({
 
             // prefill some mythic fight skip intervals
             if (this.fight) {
-                this.skipTimeIntervals = SkipTimeIntervals[this.fight.boss] ?? [];
+                this.skipTimeIntervals = BossSettingsService.getDefaultSkipTimes(this.fight.boss);
             }
         },
 
@@ -201,10 +200,14 @@ export default defineComponent({
             this.augvokerName = payload;
         },
 
-        // TODO: run this again with only the blacklisted abilities, but cut everything by 50 (to account for damage gained by the vers buff)%
         async storeTopDamagersForInterval(interval: TimeRangeMiliseconds, storage: Array<DamagerInterval>): Promise<any> {
-            const abilityBlacklist = `ability.id NOT IN (${this.ignoreSpellIds.join(', ')})`;
-            return WarcraftLogsDamageDoneService.get(this.reportId, interval.start, interval.end, this.bossOnly, abilityBlacklist)
+            return WarcraftLogsDamageDoneService.get(
+                this.reportId,
+                interval,
+                BlacklistedAbilities,
+                this.damageTarget,
+                BossSettingsService.getEssentialTargets(this.fight!.boss)
+            )
             .then((response: WarcraftLogsDamageDoneResponse) => {
                 const sortedPlayers = response.data.entries.sort((a, b) => {
                     if (a.icon == 'Evoker-Augmentation') {
