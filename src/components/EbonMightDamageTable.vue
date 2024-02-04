@@ -48,9 +48,13 @@
 </template>
     
 <style scoped>
+.damage-done-table {
+    width: 100%;
+}
 .presc-timestamp {
-    font-size: 10px;
+    font-size: 12px;
     font-style: italic;
+    font-weight: bold;
 }
 </style>
     

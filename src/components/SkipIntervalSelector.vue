@@ -1,36 +1,21 @@
 <template>
-  <div class="skip-time-intervals">
-    <div class="columns">
-      <div style="min-width: 578px">
-        <h2>Forced Downtime</h2>
+  <div class="time-selector">
+    <div>
+      <div class="header">
+          <h2>Forced Downtime</h2>
+      </div>
+      <div class="interval-group">
         <InputGroup v-for="(interval, index) in skipTimeIntervals" class="interval">
           <Button @click="removeInterval(index)" icon="pi pi-trash" severity="danger"/>
           <HumanReadableTimeRange :interval="interval" />
         </InputGroup>
-        <Button id="add-interval" size="small" label="Add" severity="secondary" outlined @click="addInterval()"/>
+        <Button class="add" size="small" label="Add" severity="secondary" outlined @click="addInterval()"/>
       </div>
     </div>
   </div>
 </template>
 
 <style scoped>
-.skip-time-intervals {
-  padding-bottom: 3%;
-
-  .interval {
-    padding-bottom: 5px;
-  }
-
-  #add-interval {
-    margin-top: 2%;
-  }
-
-  .columns {
-    display: flex;
-    flex-flow: row nowrap;
-    column-gap: 50px;
-  }
-}
 </style>
 
 <script lang="ts">

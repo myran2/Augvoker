@@ -1,6 +1,8 @@
 <template>
     <div class="log-fight-selector">
-        <h2>Log and Fight Selection</h2>
+        <div class="header">
+            <h2>Log and Fight Selection</h2>
+        </div>
         <template v-if="error">
             <Message severity="error">{{ error }}</Message>
         </template>
@@ -44,9 +46,21 @@
                         v-model="selectedAugvoker"
                         :options="fightAugvokers"
                         :loading="fightsLoading"
-                        placeholder="Augvoker Name"
-                        editable
+                        placeholder="Select an Augvoker"
                     >
+                    <template #value="slotProps">
+                        <div v-if="slotProps.value" class="flex align-items-center">
+                            <div>{{ slotProps.value.name }}</div>
+                        </div>
+                        <span v-else>
+                            {{ slotProps.placeholder }}
+                        </span>
+                    </template>
+                    <template #option="slotProps">
+                        <div class="flex align-items-center">
+                            <div>{{ slotProps.option.name }}</div>
+                        </div>
+                    </template>
                     </Dropdown>
                 </div>
             </div>
@@ -56,7 +70,7 @@
 
 <style scoped>
 .log-fight-selector {
-    padding-bottom: 3%;
+    width: 100%;
 
     .input {
         display: flex; flex-flow: column;
@@ -91,6 +105,7 @@ import Dropdown from 'primevue/dropdown';
 import InputText from 'primevue/inputtext';
 import Message from 'primevue/message';
 import Checkbox from 'primevue/checkbox';
+import type WarcraftLogsFriendly from "@/types/WarcraftLogsFriendly";
 
 export interface SelectFightPayload {
     'reportId': string;
@@ -104,7 +119,7 @@ export default defineComponent({
     selectFight(payload: SelectFightPayload) {
         return payload.fight && payload.reportId;
     },
-    selectAugvoker(payload: string) {
+    selectAugvoker(payload: WarcraftLogsFriendly) {
         return payload;
     }
   },
@@ -123,8 +138,8 @@ export default defineComponent({
     selectedFight: WarcraftLogsFight | null,
     damageTarget: DamageTargetOptions,
     fightsLoading: boolean,
-    selectedAugvoker: string,
-    fightAugvokers: string[],
+    selectedAugvoker: WarcraftLogsFriendly|null,
+    fightAugvokers: WarcraftLogsFriendly[],
   } {
     return {
         error: "",
@@ -135,7 +150,7 @@ export default defineComponent({
         selectedFight: null,
         damageTarget: DamageTargetOptions.BossOnly,
         fightsLoading: false,
-        selectedAugvoker: "",
+        selectedAugvoker: null,
         fightAugvokers: [],
     };
   },
@@ -163,7 +178,6 @@ export default defineComponent({
 
         this.reportId = found.groups.reportId;
         this.retrieveWclReport(fightString);
-
         return true;
     },
 
@@ -179,7 +193,7 @@ export default defineComponent({
 
                 this.fightAugvokers = response.data.friendlies.filter((friendly) => {
                     return friendly.icon === "Evoker-Augmentation";
-                }).map(friendly => { return friendly.name });
+                }).map(friendly => { return friendly });
 
                 response.data.fights.forEach((fight: WarcraftLogsFight) => {
                     if (fight.boss !== 0) {
@@ -202,7 +216,7 @@ export default defineComponent({
             .catch((e: Error) => {
                 this.selectedFight = null
                 this.reportId = "";
-                this.fights = [] as WarcraftLogsFight[];
+                this.fights = [];
 
                 this.urlValid = false;
 
@@ -218,9 +232,11 @@ export default defineComponent({
         if (!this.urlValid) {
             this.selectedFight = null;
             this.reportId = "";
-            this.fights = [] as WarcraftLogsFight[];
+            this.fights = [];
             this.fightsLoading = false;
         }
+
+        this.selectedAugvoker = null;
     },
 
     selectedFight(newFight: WarcraftLogsFight, oldFight: WarcraftLogsFight) {
@@ -235,7 +251,7 @@ export default defineComponent({
         });
     },
 
-    bossOnly(newVal, oldVal) {
+    damageTarget(newVal, oldVal) {
         if (! this.selectedFight) {
             return;
         }
@@ -248,8 +264,11 @@ export default defineComponent({
     },
 
     selectedAugvoker(newVal, oldVal) {
+        if (!this.selectedAugvoker) {
+            return;
+        }
         this.$emit('selectAugvoker', this.selectedAugvoker);
-    }
+    },
   }
 });
 </script>

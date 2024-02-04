@@ -1,24 +1,68 @@
 @import './base.css';
 
 #app {
-  max-width: 1280px;
+  max-width: 95%;
   margin: 0 auto;
-  padding: 2rem;
 
   font-weight: normal;
-
-  display: flex;
-  flex-flow: row wrap;
-  justify-content: center;
   height: 100vh;
 
-  .home {
+  button {
+    &.add, .calculate{
+      margin-top: 5px;
+    }
+  }
+
+  .toggle-group {
+    display: flex;
+    flex-flow: row nowrap;
+    align-items: center;
+    column-gap: 15px;
     width: 100%;
-    h1 {
-      text-align: center;
-      padding-bottom: 5%;
+  }
+
+  .columns {
+    display: flex;
+    flex-flow: row nowrap;
+    column-gap: 10%;
+    width: 100%;
+
+    &.space-between {
+      justify-content: space-between;
+    }
+  }
+
+  .header {
+    display: flex;
+    flex-flow: row nowrap;
+    column-gap: 10px;
+    align-items: center;
+    justify-content: flex-start;
+    button.copy{
+      height: 40px;
+    }
+    h2 {
+      margin: 0px;
+      padding: 0px;
+    }
+  }
+
+  .time-selector {
+    display: flex;
+    flex-flow: column nowrap;
+    row-gap: 5px;
+    .interval-group {
+      display: inline-grid;
+      grid-auto-flow: column;
+      grid-template-rows: repeat(15, auto);
+      column-gap: 35px;
+      row-gap: 5px;
+    }
+    .toggle-group {
+      padding-bottom: 5px;
+    }
+    button.add {
+      width: 100%;
     }
   }
 }
-
-

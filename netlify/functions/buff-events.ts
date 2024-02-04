@@ -54,7 +54,7 @@ const handler: Handler = async (event: HandlerEvent, context) => {
     const source = getParameter(event, "source");
     const EXCLUDE_PETS = 2;
 
-    let url = `https://www.warcraftlogs.com:443/v1/report/tables/buffs/${reportId}?start=${segmentStart}&end=${segmentEnd}&abilityid=${abilityId}&sourceid=${source}&options=${EXCLUDE_PETS}&by=target`;
+    let url = `https://www.warcraftlogs.com:443/v1/report/events/buffs/${reportId}?start=${segmentStart}&end=${segmentEnd}&abilityid=${abilityId}&sourceid=${source}&options=${EXCLUDE_PETS}&by=target`;
     const response = await axios.get(
       url,
       {

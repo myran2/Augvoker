@@ -1,58 +1,32 @@
 <template>
-    <div class="skip-time-intervals">
+  <div class="time-selector ebon-might" v-if="visible">
+    <div>
       <div class="header">
         <h2>Ebon Might Buffs</h2>
-        <Button
-          v-if="augvokerName"
-          :loading="loading"
-          :disabled="!allowEmCopy"
-          @click="copyEbonMightTimings()"
-          size="small" label="Copy Timings From Log"
-        />
       </div>
-        <InputGroup v-for="(ebonMightCast, index) in ebonMightTimings" class="interval">
-            <Button @click="removeEbonMightCast(index)" icon="pi pi-trash" severity="danger"/>
-            <HumanReadableTimeRange :interval="ebonMightCast" :show-diff="true"/>
-        </InputGroup>
-        <Button id="add-interval" size="small" label="Add" severity="secondary" outlined @click="addInterval()"/>
+      <Button v-if="augvoker" :loading="loading" :disabled="!allowEmCopy" @click="copyEbonMightTimings()" size="small"
+          label="Copy From Log" class="copy" />
+      <Button v-else :disabled="true" size="small" severity="info">Select an Augvoker to copy their timings</Button>
     </div>
+    <div class="interval-group">
+      <InputGroup v-for="(ebonMightCast, index) in ebonMightTimings" class="interval">
+        <Button @click="removeEbonMightCast(index)" icon="pi pi-trash" severity="danger" />
+        <HumanReadableTimeRange :interval="ebonMightCast" :show-diff="true" />
+      </InputGroup>
+    </div>
+    <Button class="add" size="small" label="Add" severity="secondary" outlined @click="addInterval()" />
+  </div>
 </template>
 
-<style scoped>
-.header {
-  display: flex;
-  flex-flow: row nowrap;
-  column-gap: 10px;
-  align-items: center;
-  button {
-    height: 40px;
-  }
-}
-.skip-time-intervals {
-  padding-bottom: 3%;
-
-  .interval {
-    padding-bottom: 5px;
-  }
-
-  #add-interval {
-    margin-top: 2%;
-  }
-
-  .columns {
-    display: flex;
-    flex-flow: row nowrap;
-    column-gap: 50px;
-  }
-}
-</style>
+<style scoped></style>
 
 <script lang="ts">
-import { defineComponent } from "vue";
+import { type PropType, defineComponent } from "vue";
 import HumanReadableTimeRange from '@/components/HumanReadableTimeRange.vue';
 import WarcraftLogsBuffsService from "@/services/WarcraftLogsBuffsService";
 import type WarcraftLogsBuffsResponse from "@/types/WarcraftLogsBuffsResponse";
 import type FightLocalizedTimeRange from "@/types/FightLocalizedTimeRange";
+import type WarcraftLogsFriendly from "@/types/WarcraftLogsFriendly";
 import Button from 'primevue/button';
 import InputNumber from 'primevue/inputnumber';
 import InputGroup from 'primevue/inputgroup';
@@ -73,19 +47,43 @@ export default defineComponent({
     InputGroupAddon
   },
   props: {
-    augvokerName: String,
-    reportId: String,
-    startTimestamp: Number,
-    endTimestamp: Number,
+    augvoker: Object as PropType<WarcraftLogsFriendly | null>,
+    reportId: {
+      type: String,
+      required: true
+    },
+    startTimestamp: {
+      type: Number,
+      required: true
+    },
+    endTimestamp: {
+      type: Number,
+      required: true
+    },
+    ebonMightDurationSeconds: {
+      type: Number,
+      required: true
+    },
+    skipTimeIntervals: {
+      type: Array<FightLocalizedTimeRange>,
+      required: true
+    },
+    visible: {
+      type: Boolean,
+      required: true
+    }
   },
-  data() : {
-    ebonMightTimings: Array<FightLocalizedTimeRange>,
+  data(): {
+    ebonMightTimings: FightLocalizedTimeRange[],
     loading: boolean,
   } {
     return {
       ebonMightTimings: [],
       loading: false,
     };
+  },
+  mounted() {
+    this.ebonMightTimings = this.generateEbonMightTimings();
   },
   methods: {
     addInterval() {
@@ -97,15 +95,16 @@ export default defineComponent({
       if (!lastInterval) {
         this.ebonMightTimings.push({
           start: 0,
-          end: 0,
+          end: this.ebonMightDurationSeconds,
         })
         return;
       }
 
-      this.ebonMightTimings.push({
+      let interval: FightLocalizedTimeRange = this.tweakIntervalForDowntime({
         start: lastInterval.end + 1,
         end: lastInterval.end + (lastInterval.end - lastInterval.start),
       });
+      this.ebonMightTimings.push(interval);
     },
 
     removeEbonMightCast(index: number) {
@@ -119,30 +118,72 @@ export default defineComponent({
 
       this.loading = true;
 
-      const segment = {start: this.startTimestamp!, end: this.endTimestamp!}
-      WarcraftLogsBuffsService.get(this.reportId!, segment, 395296)
-            .then((response: WarcraftLogsBuffsResponse) => {
-              this.loading = false;
-              const selectedAugBuffs = response.data.auras.find(obj => { return obj.name === this.augvokerName; });
-              if (! selectedAugBuffs) {
-                return;
-              }
-              this.ebonMightTimings = selectedAugBuffs.bands.map(band => {
-                return {
-                  start: Math.round((band.startTime - this.startTimestamp!) / 1000),
-                  end: Math.round((band.endTime - this.startTimestamp!) / 1000)
-                };
-              });
-            })
-            .catch((e: Error) => {
-                console.error(e);
-            });
-    }
+      const segment = { start: this.startTimestamp!, end: this.endTimestamp! }
+      WarcraftLogsBuffsService.get(this.reportId!, segment, 395296, this.augvoker!.id)
+        .then((response: WarcraftLogsBuffsResponse) => {
+          this.loading = false;
+          const allCasts = response.data.auras.flatMap((target) => (target.bands)).sort((a, b) => (a.startTime - b.startTime));
+          this.ebonMightTimings = allCasts.map(band => {
+            return {
+              start: Math.round((band.startTime - this.startTimestamp!) / 1000),
+              end: Math.round((band.endTime - this.startTimestamp!) / 1000)
+            };
+          });
+        })
+        .catch((e: Error) => {
+          console.error(e);
+        });
+    },
+
+    tweakIntervalForDowntime(interval: FightLocalizedTimeRange): FightLocalizedTimeRange {
+      this.skipTimeIntervals.forEach(skipInterval => {
+        if (skipInterval.start === skipInterval.end) {
+          return;
+        }
+
+        // current interval starts inside of a skipped interval:
+        // change start to end of skipped interval
+        if (skipInterval.start <= interval.start && interval.start <= skipInterval.end) {
+          interval.start = skipInterval.end;
+          interval.end = interval.start + this.ebonMightDurationSeconds;
+        }
+
+        // current interval ends inside of a skipped interval:
+        // change end to beginning of interval.
+        if (skipInterval.start <= interval.end && interval.end <= skipInterval.end) {
+          interval.end = skipInterval.start;
+        }
+      });
+
+      return interval;
+    },
+
+    generateEbonMightTimings(): FightLocalizedTimeRange[] {
+      let timings: FightLocalizedTimeRange[] = [];
+
+      const fightDurationSeconds = Math.floor((this.endTimestamp - this.startTimestamp) / 1000);
+      let interval: FightLocalizedTimeRange = {
+          start: 5,
+          end: 5 + this.ebonMightDurationSeconds
+      };
+
+      while (interval.start < fightDurationSeconds) {
+        interval.end = Math.min(interval.end, fightDurationSeconds);
+        timings.push(structuredClone(interval));
+
+        interval.start = interval.end
+        interval.end += this.ebonMightDurationSeconds;
+
+        interval = this.tweakIntervalForDowntime(interval);
+      }
+
+      return timings;
+    },
   },
 
   computed: {
     allowEmCopy() {
-      return this.reportId && this.startTimestamp && this.endTimestamp && this.augvokerName
+      return this.reportId && this.startTimestamp && this.endTimestamp && this.augvoker
     }
   },
 

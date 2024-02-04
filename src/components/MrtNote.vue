@@ -9,6 +9,7 @@
   
 <style scoped>
 .mrt-note {
+    width: 100%;
     textarea {
         width: 100%;
         height: 150px;

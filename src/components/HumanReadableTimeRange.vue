@@ -1,22 +1,22 @@
 <template>
   <div class="time-range">
-    <InputMask v-model="startDisplay" mask="9:99"/>
+    <InputMask v-model="startDisplay" mask="9:99" size="5"/>
     <span>-</span>
-    <InputMask v-model="endDisplay" mask="9:99"/>
-    <template v-if="showDiff && interval && (interval.end - interval.start) > 0">
-      <span>{{ interval.end - interval.start }}s</span>
+    <InputMask v-if="showEnd" v-model="endDisplay" mask="9:99" size="5"/>
+    <template v-if="showDiff && (interval && (interval.end - interval.start) > 0)">
+      <span v-if="overrideDiff">{{ overrideDiff }}</span>
+      <span v-else>{{ interval.end - interval.start }}s</span>
     </template>
   </div>
 </template>
 
 <style scoped>
 .time-range {
-  width: 100%;
   display: flex;
   flex-flow: row nowrap;
   justify-content: flex-start;
   align-items: center;
-  column-gap: 10px;
+  column-gap: 5px;
 }
 span {
   font-size: 25px;
@@ -37,7 +37,17 @@ export default defineComponent({
   },
   props: {
     interval: Object as PropType<FightLocalizedTimeRange>,
-    showDiff: Boolean
+    showDiff: {
+      type: Boolean,
+      default: false
+    },
+    showEnd: {
+      type: Boolean,
+      default: true
+    },
+    overrideDiff: {
+      type: String,
+    }
   },
   data() : {
     startDisplay: string;
@@ -76,8 +86,11 @@ export default defineComponent({
     },
 
     interval: function(newValue, oldValue) {
-      this.startDisplay = secondsToTime(this.interval!.start);
-      this.endDisplay = secondsToTime(this.interval!.end);
+      if (!this.interval) {
+        return;
+      }
+      this.startDisplay = secondsToTime(this.interval.start, 1);
+      this.endDisplay = secondsToTime(this.interval.end, 1);
     }
   },
 });
