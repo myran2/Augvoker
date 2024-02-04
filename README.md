@@ -1,46 +1,44 @@
-# augvoker
+# Augvoker Log Analysis Thing
 
-This template should help get you started developing with Vue 3 in Vite.
+A tool that helps you plan out your Ebon Mights and Presciences.
 
-## Recommended IDE Setup
+## How It Works
+1. Enter a WarcraftLogs report url and choose a fight.
+2. Select a fight from the dropdown.
+    * If your report url contains a fight numnber, the fight will be selected automatically.
+3. Choose what type of damage you want to optimize for:
+    * Boss Only - Only the boss :)
+    * Essential Targets - For fights (like Fyrakk) with periods of time where the boss isn't attackable. This setting includes additional high-priority targets.
+    * All Targets
+4. If the boss you're analyzing has any periods of time with nothing to attack or periods where you want to skip damage analysis entirely, you can add them in the "Forced Downtime" section.
+    * The tool assumes 0 Ebon Might uptime and 0 prescience casts during these periods.
+    * Prescience's cooldown will continue to tick during these periods, so if the period is longer than prescience's cooldown, you will start the next EM period with 2 charges.
+5. Optionally, you can enable the "Use Advanced Timings" toggle.
+    * This lets you fine-tine each cast of ebon might and prescience.
+    * This is also where you can indicate that you are pre-casting prescience before the pull to start with a "long duration" prescience.
+    * Most importantly, you can import timings from a log and then apply those timings to your log.
+      * For example, you can grab a top parsing aug log from WCL or Lorrgs, put the log into this tool, copy the EM and prescience timings, then put in your log and calculate it.
+6. Calculate!
+    * You'll see a table of the top 4 damagers for each of your configured EM windows.
+      * Each prescience cast will appear next to the target's name in parenthesized smaller text.
+      * If a name doesn't have a prescience timestamp next to it, it's not included in that EM window.
+    * If everything looks right, you can slap the provided MRT note into your personal MRT note in-game and you're good to go!
 
-[VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur) + [TypeScript Vue Plugin (Volar)](https://marketplace.visualstudio.com/items?itemName=Vue.vscode-typescript-vue-plugin).
+## Live Site
+https://augvoker.netlify.app/
 
-## Type Support for `.vue` Imports in TS
+## Required in-game WeakAuras
+* [Prescience Glows](https://wago.io/yrmx6ZQSG) - Glows your assigned target's frames when its time to use prescience.
+* Optional - [Kaze's MRT WeakAura](https://wago.io/n7l5uN3YM) - Reminds you to use Ebon Might at the configured times.
+    * Consult the description of the WA for how to set up fancy stuff like TTS or adjust how far in advance it will remind you.
 
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [TypeScript Vue Plugin (Volar)](https://marketplace.visualstudio.com/items?itemName=Vue.vscode-typescript-vue-plugin) to make the TypeScript language service aware of `.vue` types.
-
-If the standalone TypeScript plugin doesn't feel fast enough to you, Volar has also implemented a [Take Over Mode](https://github.com/johnsoncodehk/volar/discussions/471#discussioncomment-1361669) that is more performant. You can enable it by the following steps:
-
-1. Disable the built-in TypeScript Extension
-    1) Run `Extensions: Show Built-in Extensions` from VSCode's command palette
-    2) Find `TypeScript and JavaScript Language Features`, right click and select `Disable (Workspace)`
-2. Reload the VSCode window by running `Developer: Reload Window` from the command palette.
-
-## Customize configuration
-
-See [Vite Configuration Reference](https://vitejs.dev/config/).
-
-## Project Setup
-
-```sh
+## Running Locally
+### Setup
+```
 npm install
 ```
-
-### Compile and Hot-Reload for Development
-
-```sh
-npm run dev
+Create a `.env` file in the root directory with a `WCL_API_KEY` entry that contains your WarcraftLogs v1 API key.
+### Running
 ```
-
-### Type-Check, Compile and Minify for Production
-
-```sh
-npm run build
-```
-
-### Lint with [ESLint](https://eslint.org/)
-
-```sh
-npm run lint
+netlify run dev
 ```
