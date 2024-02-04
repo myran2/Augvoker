@@ -12,6 +12,15 @@ const defaultSettings: { [encounterId: number] : BossConfiguration} = {
         ]
     },
 
+    // Nymue
+    2708: {
+        essentialTargetIds: [
+            206172, // Nymue
+            209800, // Cycle Warden - Left/Right Intermission Adds
+            213143, // Manifested Dream - Back Mythic Intermission Adds
+        ]
+    },
+
     // Tindral Sageswift
     2786: {
         skipTimes: [

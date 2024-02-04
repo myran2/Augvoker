@@ -75,10 +75,12 @@ export default defineComponent({
   },
   data(): {
     ebonMightTimings: FightLocalizedTimeRange[],
+    ebonMightCoolDownSeconds: number,
     loading: boolean,
   } {
     return {
       ebonMightTimings: [],
+      ebonMightCoolDownSeconds: 30,
       loading: false,
     };
   },
@@ -101,8 +103,8 @@ export default defineComponent({
       }
 
       let interval: FightLocalizedTimeRange = this.tweakIntervalForDowntime({
-        start: lastInterval.end + 1,
-        end: lastInterval.end + (lastInterval.end - lastInterval.start),
+        start: lastInterval.start + this.ebonMightCoolDownSeconds,
+        end: lastInterval.start + this.ebonMightCoolDownSeconds + this.ebonMightDurationSeconds,
       });
       this.ebonMightTimings.push(interval);
     },
@@ -171,8 +173,8 @@ export default defineComponent({
         interval.end = Math.min(interval.end, fightDurationSeconds);
         timings.push(structuredClone(interval));
 
-        interval.start = interval.end
-        interval.end += this.ebonMightDurationSeconds;
+        interval.start = interval.start + this.ebonMightCoolDownSeconds;
+        interval.end = interval.start + this.ebonMightDurationSeconds
 
         interval = this.tweakIntervalForDowntime(interval);
       }

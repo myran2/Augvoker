@@ -23,6 +23,8 @@ A tool that helps you plan out your Ebon Mights and Presciences.
       * Each prescience cast will appear next to the target's name in parenthesized smaller text.
       * If a name doesn't have a prescience timestamp next to it, it's not included in that EM window.
     * If everything looks right, you can slap the provided MRT note into your personal MRT note in-game and you're good to go!
+7. If your selected Prescience and Ebon Might timings result in any presciences that expire before you cast Ebon Might, those presciences will be highlighted with an exclamation mark.
+    * You can try shifting your casts back/forward if you need to guarantee 3/4 of your EM targets for a specific burn, but a couple ineffective prescience casts are generally fine.
 
 ## Live Site
 https://augvoker.netlify.app/
