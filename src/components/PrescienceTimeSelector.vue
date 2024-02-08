@@ -249,6 +249,11 @@ export default defineComponent({
         },
 
         assignPrescienceTimes(topDamagersByTime: DamagerInterval[]): FightLocalizedTimeRange[] {
+            // unclaim all casts
+            this.prescienceCasts.forEach((cast: PrescienceCast) => {
+                cast.claimed = false;
+            });
+
             topDamagersByTime.forEach((interval: DamagerInterval) => {
                 let damagerIndex: number = 0;
 

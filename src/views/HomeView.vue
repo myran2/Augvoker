@@ -287,7 +287,6 @@ export default defineComponent({
                 damageDoneRequests.push(this.storeTopDamagersForInterval(interval, this.topDamagersByTime));
             });
 
-            const fightTimeSeconds = (this.fight.end_time - this.fight.start_time) / 1000;
             Promise.all(damageDoneRequests).then(results => {
                 this.topDamagersByTime.sort((a, b) => {
                     return a.start - b.start;
