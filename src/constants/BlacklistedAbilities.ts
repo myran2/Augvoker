@@ -73,4 +73,5 @@ export const BlacklistedAbilities: number[] = [
     386301, // Completely Safe Rocket
     243991, // Blazefury Medallion
     426297, // Bramble Barrier
+    425610, // Empowering Flame - Tindral divebomb damage
 ];
