@@ -2,6 +2,7 @@ import type WarcraftLogsFightPhase from '@/types/WarcraftLogsFightPhase';
 
 export default interface WarcraftLogsFight {
     id: number;
+    displayNumber?: number;
     boss: number;
     start_time: number;
     end_time: number;

@@ -16,7 +16,7 @@
             <Dropdown v-model="selectedFight" :loading=fightsLoading :options="fights" placeholder="Select a Fight" class="w-full md:w-14rem">
                 <template #value="slotProps">
                     <div v-if="slotProps.value" class="flex align-items-center">
-                        <div>#{{ slotProps.value.id }} - {{ slotProps.value.name }} ({{ !slotProps.value.kill ? (slotProps.value.fightPercentage / 100) + '%' : 'Kill' }})</div>
+                        <div>#{{ slotProps.value.displayNumber }} - {{ slotProps.value.name }} ({{ !slotProps.value.kill ? (slotProps.value.fightPercentage / 100) + '%' : 'Kill' }})</div>
                     </div>
                     <span v-else>
                         {{ slotProps.placeholder }}
@@ -24,7 +24,7 @@
                 </template>
                 <template #option="slotProps">
                     <div class="flex align-items-center">
-                        <div>#{{ slotProps.option.id }} - {{ slotProps.option.name }} ({{ !slotProps.option.kill ? (slotProps.option.fightPercentage / 100) + '%' : 'Kill' }})</div>
+                        <div>#{{ slotProps.option.displayNumber }} - {{ slotProps.option.name }} ({{ !slotProps.option.kill ? (slotProps.option.fightPercentage / 100) + '%' : 'Kill' }})</div>
                     </div>
                 </template>
             </Dropdown>
@@ -195,8 +195,14 @@ export default defineComponent({
                     return friendly.icon === "Evoker-Augmentation";
                 }).map(friendly => { return friendly });
 
+                let pullNumbers: { [id: string] : number; } = {};
                 response.data.fights.forEach((fight: WarcraftLogsFight) => {
                     if (fight.boss !== 0) {
+                        const encounterId_difficulty = `${fight.boss}_${fight.difficulty}`;
+                        if (! pullNumbers[encounterId_difficulty]) {
+                            pullNumbers[encounterId_difficulty] = 1;
+                        }
+                        fight.displayNumber = pullNumbers[encounterId_difficulty]++;
                         this.fights.push(fight);
 
                         if (fightString && fightString !== 'last') {
