@@ -254,6 +254,8 @@ export default defineComponent({
                 cast.claimed = false;
             });
 
+            const fightEndSeconds = Math.floor((this.endTimestamp - this.startTimestamp) / 1000);
+
             topDamagersByTime.forEach((interval: DamagerInterval) => {
                 let damagerIndex: number = 0;
 
@@ -280,7 +282,7 @@ export default defineComponent({
             });
 
             return this.prescienceCasts.filter((cast: PrescienceCast) => {
-                return !cast.claimed;
+                return !cast.claimed && cast.duration.start <= fightEndSeconds;
             }).map((cast: PrescienceCast) => {
                 return cast.duration;
             });
