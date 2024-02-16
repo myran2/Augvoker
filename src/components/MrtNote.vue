@@ -65,7 +65,7 @@ computed: {
             return "";
         }
         let mrtLines: string[] = [];
-        let ebonMightLines: string[] = ['|cffff00ff--- Ebon Might Reminders---|r'];
+        let ebonMightLines: string[] = ['|cffff00ff--- Ebon Might Reminders ---|r'];
 
         const onPullDamagers = this.topDamagersByTime[0].damagers.slice(0,2)
         .map((damager: Damager) => {

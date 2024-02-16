@@ -116,21 +116,24 @@ export default defineComponent({
             if (!lastInterval) {
                 this.prescienceCasts.push({
                     duration: {
-                        start: 5,
-                        end: 5 + this.prescienceDuration,
+                        start: 1,
+                        end: 1,
                     },
                     claimed: false
                 })
+
                 return;
             }
 
-            this.prescienceCasts.push({
-                duration: {
-                    start: lastInterval.end + 1,
-                    end: lastInterval.end + (lastInterval.end - lastInterval.start),
-                },
-                claimed: false
-            });
+            this.prescienceCasts.push(this.adjustPrescienceBuffDurationForPrecastValue(this.prescienceCasts.length, 
+                {
+                    duration: {
+                        start: lastInterval.start + this.prescienceCooldown,
+                        end: lastInterval.start + this.prescienceCooldown,
+                    },
+                    claimed: false
+                }
+            ));
         },
 
         removeCast(index: number) {
