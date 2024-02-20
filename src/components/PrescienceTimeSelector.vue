@@ -13,44 +13,40 @@
             <label>Precast</label>
         </div>
         <div class="interval-group">
-            <InputGroup v-for="(cast, index) in prescienceCasts" class="interval p-overlay-badge">
-                <Button @click="removeCast(index)" icon="pi pi-trash" severity="danger" />
-                <template v-if="!cast.claimed && anyCastsClaimed">
-                    <HumanReadableTimeRange :interval="cast.duration" :show-diff="true" :show-end="false"
-                        :override-diff="castDurationString(cast.duration)" v-badge.warning="'!'" />
-                </template>
-                <template v-else>
-                    <HumanReadableTimeRange :interval="cast.duration" :show-diff="true" :show-end="false"
-                        :override-diff="castDurationString(cast.duration)" />
-                </template>
-            </InputGroup>
+            <PrescienceCastField v-for="(cast, index) in prescienceCasts" class="p-overlay-badge" :cast="cast"
+                :buff-duration-seconds="prescienceDuration" :is-long-cast="isLongCast(index)" @remove-cast="removeCast"
+                v-badge.warning="!cast.claimed && anyCastsClaimed ? '!' : undefined" />
             <Button class="add" size="small" label="Add" severity="secondary" outlined @click="addCast()" />
         </div>
     </div>
 </template>
 
-<style scoped></style>
+<style>
+.p-badge:empty {
+    display: none;
+}
+</style>
 
 <script lang="ts">
 import { type PropType, defineComponent } from "vue";
-import HumanReadableTimeRange from '@/components/HumanReadableTimeRange.vue';
 import WarcraftLogsBuffEventsService from "@/services/WarcraftLogsBuffEventsService";
+import PrescienceCastField from "@/components/PrescienceCastField.vue";
 import type WarcraftLogsBuffEventsResponse from "@/types/WarcraftLogsBuffEventsResponse";
 import type FightLocalizedTimeRange from "@/types/FightLocalizedTimeRange";
 import type WarcraftLogsFriendly from "@/types/WarcraftLogsFriendly";
 import type { PrescienceCast } from "@/types/PrescienceCast";
 import type { DamagerInterval } from "@/types/DamagerInterval";
 import Button from 'primevue/button';
-import Badge from 'primevue/badgedirective';
 import InputSwitch from 'primevue/inputswitch';
 import InputNumber from 'primevue/inputnumber';
 import InputGroup from 'primevue/inputgroup';
 import InputGroupAddon from 'primevue/inputgroupaddon';
+import Badge from 'primevue/badgedirective';
 
 export default defineComponent({
     name: "PrescienceTimeSelector",
     components: {
-        HumanReadableTimeRange,
+        PrescienceCastField,
         Button,
         InputSwitch,
         InputNumber,
@@ -108,12 +104,7 @@ export default defineComponent({
     expose: ['assignPrescienceTimes'],
     methods: {
         addCast() {
-            if (!this.prescienceCasts) {
-                return;
-            }
-
-            const lastInterval: FightLocalizedTimeRange = this.prescienceCasts.slice(-1)[0].duration;
-            if (!lastInterval) {
+            if (!this.prescienceCasts.length) {
                 this.prescienceCasts.push({
                     duration: {
                         start: 1,
@@ -125,18 +116,23 @@ export default defineComponent({
                 return;
             }
 
-            this.prescienceCasts.push(this.adjustPrescienceBuffDurationForPrecastValue(this.prescienceCasts.length, 
-                {
-                    duration: {
-                        start: lastInterval.start + this.prescienceCooldown,
-                        end: lastInterval.start + this.prescienceCooldown,
-                    },
-                    claimed: false
-                }
-            ));
+            const lastInterval: FightLocalizedTimeRange = this.prescienceCasts.slice(-1)[0].duration;
+            const castTimestamp = lastInterval.start + this.prescienceCooldown
+            this.prescienceCasts.push({
+                duration: {
+                    start: castTimestamp,
+                    end: castTimestamp + (this.prescienceDuration * (this.isLongCast(this.prescienceCasts.length) ? 2 : 1)),
+                },
+                claimed: false
+            });
         },
 
-        removeCast(index: number) {
+        removeCast(cast: PrescienceCast) {
+            const index = this.prescienceCasts.findIndex((c) => c === cast);
+            if (index < 0) {
+                return;
+            }
+
             this.prescienceCasts?.splice(index, 1);
         },
 
@@ -147,7 +143,7 @@ export default defineComponent({
                 {
                     duration: {
                         start: 1,
-                        end: this.prescienceDuration * (this.precast ? 2 : 1),
+                        end: 1 + (this.prescienceDuration * (this.isLongCast(0) ? 2 : 1)),
                     },
                     claimed: false,
                 }
@@ -170,7 +166,7 @@ export default defineComponent({
                             this.prescienceCasts.push({
                                 duration: {
                                     start: prescTimestamp,
-                                    end: prescTimestamp + (this.prescienceDuration * (prescCastCount % 3 === 0 ? 2 : 1))
+                                    end: prescTimestamp + + (this.prescienceDuration * (this.isLongCast(0) ? 2 : 1))
                                 },
                                 claimed: false
                             });
@@ -182,7 +178,7 @@ export default defineComponent({
                 prescienceCasts.push({
                     duration: {
                         start: prescTimestamp,
-                        end: prescTimestamp + (this.prescienceDuration * (prescCastCount % 3 === 0 ? 2 : 1))
+                        end: prescTimestamp + + (this.prescienceDuration * (this.isLongCast(0) ? 2 : 1))
                     },
                     claimed: false
                 });
@@ -192,7 +188,7 @@ export default defineComponent({
             return prescienceCasts;
         },
 
-        adjustPrescienceBuffDurationForPrecastValue(castCount: number, cast: PrescienceCast) {
+        isLongCast(castCount: number): boolean {
             /**
              * castIndex % 3 === 0 - first cast. double duration if precasted
              * castIndex % 3 === 1 - 2nd cast. never double duration unless you mess up precasting
@@ -200,7 +196,12 @@ export default defineComponent({
              * ...
              */
             const doublePrescIndex = this.precast ? 0 : 2;
-            const buffLength = this.prescienceDuration * (castCount % 3 == doublePrescIndex ? 2 : 1);
+            return castCount % 3 == doublePrescIndex;
+        },
+
+        adjustPrescienceBuffDurationForPrecastValue(castCount: number, cast: PrescienceCast) {
+
+            const buffLength = this.prescienceDuration * (this.isLongCast(castCount) ? 2 : 1);
             cast.duration.end = cast.duration.start + buffLength;
             return cast;
         },
@@ -290,14 +291,6 @@ export default defineComponent({
                 return cast.duration;
             });
         },
-
-        castDurationString(cast: FightLocalizedTimeRange): string {
-            if (cast.end - cast.start >= this.prescienceDuration * 2) {
-                return "Long";
-            }
-
-            return "Short";
-        }
     },
 
     computed: {
@@ -305,7 +298,12 @@ export default defineComponent({
             return this.augvoker
         },
         anyCastsClaimed() {
-            return this.prescienceCasts.find((cast) => (cast.claimed));
+            const claimedCasts = this.prescienceCasts.find((cast) => (cast.claimed));
+            if (!claimedCasts) {
+                return false;
+            }
+
+            return true;
         }
     },
 
