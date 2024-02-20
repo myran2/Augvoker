@@ -1,8 +1,4 @@
 export function secondsToTime(seconds: number, minuteDigits: number = 2): string {
-    if (seconds === 0) {
-        return "PULL";
-    }
-
     const min = Math.floor(seconds / 60);
     const sec = Math.floor(seconds % 60);
     return `${min.toString().padStart(minuteDigits, '0')}:${sec.toString().padStart(2, '0')}`;

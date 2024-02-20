@@ -15,7 +15,7 @@
         <div class="interval-group">
             <PrescienceCastField v-for="(cast, index) in prescienceCasts" class="p-overlay-badge" :cast="cast"
                 :buff-duration-seconds="prescienceDuration" :is-long-cast="isLongCast(index)" @remove-cast="removeCast"
-                v-badge.warning="!cast.claimed && anyCastsClaimed ? '!' : undefined" />
+                v-badge.warning="unclaimedBadge(cast)" />
             <Button class="add" size="small" label="Add" severity="secondary" outlined @click="addCast()" />
         </div>
     </div>
@@ -134,6 +134,14 @@ export default defineComponent({
             }
 
             this.prescienceCasts?.splice(index, 1);
+        },
+
+        unclaimedBadge(cast: PrescienceCast): string|undefined {
+            if (!this.anyCastsClaimed) {
+                return undefined;
+            }
+
+            return (cast.duration.start < this.fightDurationSeconds) && !cast.claimed ? '!' : undefined;
         },
 
         generatePrescienceTimings(): PrescienceCast[] {
@@ -258,8 +266,6 @@ export default defineComponent({
                 cast.claimed = false;
             });
 
-            const fightEndSeconds = Math.floor((this.endTimestamp - this.startTimestamp) / 1000);
-
             topDamagersByTime.forEach((interval: DamagerInterval) => {
                 let damagerIndex: number = 0;
 
@@ -286,7 +292,7 @@ export default defineComponent({
             });
 
             return this.prescienceCasts.filter((cast: PrescienceCast) => {
-                return !cast.claimed && cast.duration.start <= fightEndSeconds;
+                return !cast.claimed && cast.duration.start <= this.fightDurationSeconds;
             }).map((cast: PrescienceCast) => {
                 return cast.duration;
             });
@@ -304,6 +310,9 @@ export default defineComponent({
             }
 
             return true;
+        },
+        fightDurationSeconds(): number {
+            return Math.floor((this.endTimestamp - this.startTimestamp) / 1000);
         }
     },
 
