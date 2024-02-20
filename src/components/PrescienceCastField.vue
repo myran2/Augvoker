@@ -66,7 +66,7 @@ export default defineComponent({
         return {
             startDisplay: secondsToTime(this.cast.duration.start, 1),
             endDisplay: secondsToTime(this.cast.duration.end, 1),
-            showEnd: true,
+            showEnd: false,
         };
     },
     methods: {

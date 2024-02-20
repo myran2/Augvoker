@@ -136,12 +136,12 @@ export default defineComponent({
             this.prescienceCasts?.splice(index, 1);
         },
 
-        unclaimedBadge(cast: PrescienceCast): string|undefined {
+        unclaimedBadge(cast: PrescienceCast): string {
             if (!this.anyCastsClaimed) {
-                return undefined;
+                return '';
             }
 
-            return (cast.duration.start < this.fightDurationSeconds) && !cast.claimed ? '!' : undefined;
+            return (cast.duration.start < this.fightDurationSeconds) && !cast.claimed ? '!' : '';
         },
 
         generatePrescienceTimings(): PrescienceCast[] {
