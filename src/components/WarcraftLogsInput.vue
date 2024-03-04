@@ -161,7 +161,7 @@ export default defineComponent({
   },
   methods: {
     processUrl(): boolean {
-        const regexp = /^(?:https:\/\/)?(?:www\.)warcraftlogs.com\/reports\/(?<reportId>[a-zA-Z0-9]*)(?<extraParams>#.*)?$/;
+        const regexp = /^(?:https:\/\/)?(?:.*\.)?warcraftlogs.com\/reports\/(?<reportId>[a-zA-Z0-9]*)(?<extraParams>#.*)?$/;
         const found = this.url.match(regexp);
         if (!found || !found.groups) {
             return false;
