@@ -117,10 +117,17 @@ computed: {
         this.unclaimedPresciences.forEach((cast: FightLocalizedTimeRange) => {
             mrtLines.push(`${secondsToTime(cast.start)} - |cffff00ffdefault_target|r`);
         });
-        mrtLines.sort((a: string, b: string) => {
+        mrtLines = mrtLines.sort((a: string, b: string) => {
             const aTimestamp = a.split(" - ")[0];
             const bTimestamp = b.split(" - ")[0];
             return timeToSeconds(aTimestamp) - timeToSeconds(bTimestamp);
+        }).filter((line: string, index: number, lines: string[]) => {
+            if (index === 0) {
+                return true;
+            }
+
+            // skip duplicate timestamps
+            return line.split(' - ')[0] !== lines[index - 1].split(' - ')[0];
         });
         mrtLines.unshift(`defaultTargets - ${this.getDefaultTargets(4).join(' ')}`);
         mrtLines.unshift('prescGlowsStart');
