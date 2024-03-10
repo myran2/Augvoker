@@ -67,12 +67,14 @@ computed: {
         let mrtLines: string[] = [];
         let ebonMightLines: string[] = ['|cffff00ff--- Ebon Might Reminders ---|r'];
 
-        const onPullDamagers = this.topDamagersByTime[0].damagers.slice(0,2)
-        .map((damager: Damager) => {
-            return colorize(damager.name, damager.class);
-        }).join(' ');
-        mrtLines.push(`PULL - ${onPullDamagers}`);
-        ebonMightLines.push(`{time:${secondsToTime(this.topDamagersByTime[0].start)}}EM - ${colorize(this.augvokerName, 'evoker')} {spell:404269}  `);
+        if (this.topDamagersByTime[0].damagers[0].prescTimestamp) {
+            const onPullDamagers = this.topDamagersByTime[0].damagers.slice(0,2)
+            .map((damager: Damager) => {
+                return colorize(damager.name, damager.class);
+            }).join(' ');
+            mrtLines.push(`PULL - ${onPullDamagers}`);
+            ebonMightLines.push(`{time:${secondsToTime(this.topDamagersByTime[0].start)}}EM - ${colorize(this.augvokerName, 'evoker')} {spell:404269}  `);
+        }
 
         this.topDamagersByTime.slice(1).forEach((interval: DamagerInterval) => {
             ebonMightLines.push(`{time:${secondsToTime(interval.start)}}EM - ${colorize(this.augvokerName, 'evoker')} {spell:404269}  `);
