@@ -4,21 +4,30 @@
       <div class="header">
         <h2>Ebon Might Buffs</h2>
       </div>
-      <Button v-if="augvoker" :loading="loading" :disabled="!allowEmCopy" @click="copyEbonMightTimings()" size="small"
-          label="Copy From Log" class="copy" />
-      <Button v-else :disabled="true" size="small" severity="info">Select an Augvoker to copy their timings</Button>
+      <div class="button-group">
+        <Button @click="sortTimings" size="small" label="Sort" severity="help"/>
+        <Button v-if="augvoker" :loading="loading" :disabled="!allowEmCopy" @click="copyEbonMightTimings()" size="small"
+            label="Copy From Log" class="copy" />
+        <Button v-else :disabled="true" size="small" severity="info">Select an Augvoker to copy their timings</Button>
+      </div>
     </div>
     <div class="interval-group">
       <InputGroup v-for="(ebonMightCast, index) in ebonMightTimings" class="interval">
         <Button @click="removeEbonMightCast(index)" icon="pi pi-trash" severity="danger" />
         <HumanReadableTimeRange :interval="ebonMightCast" :show-diff="true" />
       </InputGroup>
+      <Button class="add" size="small" label="Add" severity="secondary" outlined @click="addInterval()" />
     </div>
-    <Button class="add" size="small" label="Add" severity="secondary" outlined @click="addInterval()" />
   </div>
 </template>
 
-<style scoped></style>
+<style scoped>
+.button-group {
+    display: flex;
+    flex-flow: row nowrap;
+    gap: 8px;
+}
+</style>
 
 <script lang="ts">
 import { type PropType, defineComponent } from "vue";
@@ -181,6 +190,11 @@ export default defineComponent({
 
       return timings;
     },
+    sortTimings() {
+      this.ebonMightTimings.sort((castA: FightLocalizedTimeRange, castB: FightLocalizedTimeRange) => {
+        return castA.start - castB.start;
+      })
+    }
   },
 
   computed: {

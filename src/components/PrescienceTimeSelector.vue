@@ -4,17 +4,26 @@
             <div class="header">
                 <h2>Prescience Casts</h2>
             </div>
-            <Button v-if="augvoker" :loading="loading" :disabled="!allowCopy" @click="copyPrescienceCasts()" class="copy"
-                size="small" label="Copy From Log" />
-            <Button v-else :disabled="true" size="small" severity="info">Select an Augvoker to copy their timings</Button>
+            <div class="row">
+                <Button @click="sortTimings" size="small" label="Sort" severity="help"/>
+                <Button v-if="augvoker" :loading="loading" :disabled="!allowCopy" @click="copyPrescienceCasts()" class="copy"
+                    size="small" label="Copy From Log" />
+                <Button v-else :disabled="true" size="small" severity="info">Select an Augvoker to copy their timings</Button>
+            </div>
         </div>
-        <div class="toggle-group">
-            <InputSwitch v-model="precast" />
-            <label>Precast</label>
+        <div class="row">
+            <div class="toggle-group">
+                <InputSwitch v-model="precast" />
+                <label>Precast</label>
+            </div>
+            <div class="toggle-group">
+                <InputSwitch v-model="showEnd" />
+                <label>Show Ends</label>
+            </div>
         </div>
         <div class="interval-group">
             <PrescienceCastField v-for="(cast, index) in prescienceCasts" class="p-overlay-badge" :cast="cast"
-                :buff-duration-seconds="prescienceDuration" :is-long-cast="isLongCast(index)" @remove-cast="removeCast"
+                :buff-duration-seconds="prescienceDuration" :is-long-cast="isLongCast(index)" :show-end="showEnd" @remove-cast="removeCast"
                 v-badge.warning="unclaimedBadge(cast)" />
             <Button class="add" size="small" label="Add" severity="secondary" outlined @click="addCast()" />
         </div>
@@ -24,6 +33,12 @@
 <style>
 .p-badge:empty {
     display: none;
+}
+.row {
+    display: flex;
+    flex-flow: row nowrap;
+    gap: 8px;
+    justify-content: flex-start;
 }
 </style>
 
@@ -89,11 +104,13 @@ export default defineComponent({
     },
     data(): {
         precast: boolean,
+        showEnd: boolean,
         prescienceCasts: PrescienceCast[],
         loading: boolean,
     } {
         return {
             precast: false,
+            showEnd: false,
             prescienceCasts: [],
             loading: false,
         };
@@ -297,6 +314,11 @@ export default defineComponent({
                 return cast.duration;
             });
         },
+        sortTimings() {
+            this.prescienceCasts.sort((castA: PrescienceCast, castB: PrescienceCast) => {
+                return castA.duration.start - castB.duration.start;
+            })
+        }
     },
 
     computed: {

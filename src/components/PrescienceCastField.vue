@@ -56,17 +56,19 @@ export default defineComponent({
         buffDurationSeconds: {
             type: Number,
             required: true
+        },
+        showEnd: {
+            type: Boolean,
+            required: true
         }
     },
     data(): {
         startDisplay: string,
         endDisplay: string,
-        showEnd: boolean,
     } {
         return {
             startDisplay: secondsToTime(this.cast.duration.start, 1),
             endDisplay: secondsToTime(this.cast.duration.end, 1),
-            showEnd: false,
         };
     },
     methods: {
