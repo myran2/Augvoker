@@ -92,7 +92,7 @@ computed: {
                 }
 
                 // multiple presciences assigned at the same time
-                if (Math.abs(prevPrescTimestamp - damager.prescTimestamp) <= 3) {
+                if (Math.abs(prevPrescTimestamp - damager.prescTimestamp) <= 4) {
                     mrtLine.push(colorize(damager.name, damager.class));
                     if (mrtLine.length > 2) {
                         console.warn('More than 2 presciences assigned at the same timestamp', interval);

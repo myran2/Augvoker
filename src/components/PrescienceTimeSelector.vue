@@ -50,7 +50,8 @@ import type WarcraftLogsBuffEventsResponse from "@/types/WarcraftLogsBuffEventsR
 import type FightLocalizedTimeRange from "@/types/FightLocalizedTimeRange";
 import type WarcraftLogsFriendly from "@/types/WarcraftLogsFriendly";
 import type { PrescienceCast } from "@/types/PrescienceCast";
-import type { DamagerInterval } from "@/types/DamagerInterval";
+import type { Damager, DamagerInterval } from "@/types/DamagerInterval";
+import { secondsToTime } from "@/helpers/Format";
 import Button from 'primevue/button';
 import InputSwitch from 'primevue/inputswitch';
 import InputNumber from 'primevue/inputnumber';
@@ -127,7 +128,7 @@ export default defineComponent({
                         start: 1,
                         end: 1,
                     },
-                    claimed: false
+                    claimedBy: null
                 })
 
                 return;
@@ -140,7 +141,7 @@ export default defineComponent({
                     start: castTimestamp,
                     end: castTimestamp + (this.prescienceDuration * (this.isLongCast(this.prescienceCasts.length) ? 2 : 1)),
                 },
-                claimed: false
+                claimedBy: null
             });
         },
 
@@ -158,7 +159,7 @@ export default defineComponent({
                 return '';
             }
 
-            return (cast.duration.start < this.fightDurationSeconds) && !cast.claimed ? '!' : '';
+            return (cast.duration.start < this.fightDurationSeconds) && cast.claimedBy ? '' : '!';
         },
 
         generatePrescienceTimings(): PrescienceCast[] {
@@ -170,7 +171,7 @@ export default defineComponent({
                         start: 1,
                         end: 1 + (this.prescienceDuration * (this.isLongCast(0) ? 2 : 1)),
                     },
-                    claimed: false,
+                    claimedBy: null,
                 }
             ];
 
@@ -193,7 +194,7 @@ export default defineComponent({
                                     start: prescTimestamp,
                                     end: prescTimestamp + + (this.prescienceDuration * (this.isLongCast(0) ? 2 : 1))
                                 },
-                                claimed: false
+                                claimedBy: null
                             });
                         }
                     }
@@ -205,7 +206,7 @@ export default defineComponent({
                         start: prescTimestamp,
                         end: prescTimestamp + + (this.prescienceDuration * (this.isLongCast(0) ? 2 : 1))
                     },
-                    claimed: false
+                    claimedBy: null
                 });
                 prescTimestamp += this.prescienceCooldown;
             }
@@ -265,7 +266,7 @@ export default defineComponent({
                                 start: timestamp,
                                 end: timestamp,
                             },
-                            claimed: false
+                            claimedBy: null
                         };
 
                         return this.adjustPrescienceBuffDurationForPrecastValue(castIndex, cast);
@@ -280,36 +281,42 @@ export default defineComponent({
         assignPrescienceTimes(topDamagersByTime: DamagerInterval[]): FightLocalizedTimeRange[] {
             // unclaim all casts
             this.prescienceCasts.forEach((cast: PrescienceCast) => {
-                cast.claimed = false;
+                cast.claimedBy = null;
             });
 
             topDamagersByTime.forEach((interval: DamagerInterval) => {
-                let damagerIndex: number = 0;
+                interval.damagers.forEach((damager: Damager) => {
+                    const possibleCasts = this.prescienceCasts.filter((cast) => {
+                        // find prescience casts that:
+                        //  start before this EM cast
+                        //  buff ends after this EM cast
+                        //  are unclaimed or claimed by this damager
+                        return cast.duration.end > interval.start
+                            && cast.duration.start < interval.start
+                            && (!cast.claimedBy || cast.claimedBy === damager.name);
+                    }).sort((a: PrescienceCast, b: PrescienceCast) => {
+                        // if there's a cast from a previous interval that's still up for *this* interval, prioritize that one first.
+                        if (a.claimedBy === damager.name) {
+                            return -1;
+                        }
+                        if (b.claimedBy === damager.name) {
+                            return 1;
+                        }
+                        // sort casts by how close presc is to falling off when we cast EM.
+                        // we want higher damage players to have the longer presc duration so we lose less damage if we mess up somewhere.
+                        return (b.duration.end - interval.start) - (a.duration.end - interval.start);
+                    });
 
-                this.prescienceCasts.filter((cast) => {
-                    // find prescience casts that:
-                    //  are unclaimed
-                    //  start before this EM cast
-                    //  buff ends after this EM cast
-                    return !cast.claimed
-                        && cast.duration.end > interval.start
-                        && cast.duration.start < interval.start;
-                }).sort((a: PrescienceCast, b: PrescienceCast) => {
-                    // sort casts by how close presc is to falling off when we cast EM.
-                    // we want higher damage players to have the longer presc duration so we lose less damage if we mess up somewhere.
-                    return (b.duration.end - interval.start) - (a.duration.end - interval.start);
-                }).forEach((cast: PrescienceCast) => {
-                    if (damagerIndex >= interval.damagers.length) {
+                    if (!possibleCasts.length) {
                         return;
                     }
-                    cast.claimed = true;
-                    interval.damagers[damagerIndex].prescTimestamp = cast.duration.start;
-                    damagerIndex++;
+                    possibleCasts[0].claimedBy = damager.name;
+                    damager.prescTimestamp = possibleCasts[0].duration.start;
                 });
             });
 
             return this.prescienceCasts.filter((cast: PrescienceCast) => {
-                return !cast.claimed && cast.duration.start <= this.fightDurationSeconds;
+                return !cast.claimedBy && cast.duration.start <= this.fightDurationSeconds;
             }).map((cast: PrescienceCast) => {
                 return cast.duration;
             });
@@ -326,7 +333,7 @@ export default defineComponent({
             return this.augvoker
         },
         anyCastsClaimed() {
-            const claimedCasts = this.prescienceCasts.find((cast) => (cast.claimed));
+            const claimedCasts = this.prescienceCasts.find((cast) => (cast.claimedBy !== null));
             if (!claimedCasts) {
                 return false;
             }
