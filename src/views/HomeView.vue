@@ -74,7 +74,7 @@
 
         <MrtNote
             :top-damagers-by-time="topDamagersByTime"
-            :augvoker-name="selectedAugvoker ? selectedAugvoker.name : 'YOUR_NAME_HERE'"
+            :augvoker-name="selectedAugvoker ? selectedAugvoker.name : ''"
             :unclaimed-presciences="unclaimedPresciences"
         />
 

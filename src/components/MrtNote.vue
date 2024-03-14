@@ -77,7 +77,8 @@ computed: {
         }
 
         this.topDamagersByTime.slice(1).forEach((interval: DamagerInterval) => {
-            ebonMightLines.push(`{time:${secondsToTime(interval.start)}}EM - ${colorize(this.augvokerName, 'evoker')} {spell:404269}  `);
+            const name = this.augvokerName.length > 0 ? colorize(this.augvokerName, 'evoker') : 'class:Evoker';
+            ebonMightLines.push(`{time:${secondsToTime(interval.start)}}EM - ${name} {spell:404269}  `);
 
             // skip really short time intervals
             if ((interval.end - interval.start) <= 3) {
@@ -92,7 +93,7 @@ computed: {
                 }
 
                 // multiple presciences assigned at the same time
-                if (Math.abs(prevPrescTimestamp - damager.prescTimestamp) <= 4) {
+                if (Math.abs(prevPrescTimestamp - damager.prescTimestamp) <= 2) {
                     mrtLine.push(colorize(damager.name, damager.class));
                     if (mrtLine.length > 2) {
                         console.warn('More than 2 presciences assigned at the same timestamp', interval);
